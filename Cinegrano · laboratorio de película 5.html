@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cinegrano · laboratorio de película</title>
+<style>
+:root{--bg:#e8e7e3;--pn:#f5f4f1;--ink:#1c1d1f;--mut:#686b70;--ln:#cdcbc5;--ac:#85661a;--st:#d6d5d0;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1b1d;--pn:#242629;--ink:#e9e7e2;--mut:#9b9ea3;--ln:#383b3f;--ac:#d0aa52;--st:#2b2d31;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1b1d;--pn:#242629;--ink:#e9e7e2;--mut:#9b9ea3;--ln:#383b3f;--ac:#d0aa52;--st:#2b2d31;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:grid;grid-template-columns:1fr 340px;grid-template-rows:auto 1fr;min-height:100vh}
+header{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--ln);background:var(--pn)}
+h1{font:600 16px/1 Georgia,"Times New Roman",serif;margin:0 auto 0 0;letter-spacing:.02em}
+button,select,input[type=text]{font:inherit;color:var(--ink);background:var(--st);border:1px solid var(--ln);border-radius:5px;padding:6px 10px;min-height:32px}
+button{cursor:pointer}button.pri{background:var(--ac);border-color:var(--ac);color:var(--bg);font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+main{padding:14px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start;overflow:auto;gap:10px;min-width:0}
+#empty,.cmp,#msg{margin-left:auto;margin-right:auto}[data-mode=film] .g,[data-mode=generic] .f{display:none}.zz canvas{image-rendering:pixelated}
+.stage{position:relative;aspect-ratio:var(--ar,3/2);width:calc(min(100%,(100vh - 190px)*var(--ar,1.5))*var(--z,1));flex:none;margin:0 auto;background:var(--st);border:1px solid var(--ln);display:none;overflow:hidden}
+.stage canvas{position:absolute;inset:0;width:100%;height:100%}
+#B{clip-path:inset(0 calc(100% - var(--x,50%)) 0 0);border-right:2px solid var(--ac)}
+.tag{position:absolute;top:8px;font-size:12px;padding:2px 7px;background:#000a;color:#fff;border-radius:3px;pointer-events:none}
+.cmp{width:min(100%,520px);display:none;align-items:center;gap:8px;color:var(--mut)}.cmp input{flex:1}
+#empty{max-width:420px;text-align:center;color:var(--mut);border:1px dashed var(--ln);padding:34px 20px;border-radius:8px}
+#empty b{display:block;color:var(--ink);font:600 18px Georgia,serif;margin-bottom:6px}
+aside{border-left:1px solid var(--ln);background:var(--pn);overflow:auto;max-height:calc(100vh - 53px);position:sticky;top:0}
+details{border-bottom:1px solid var(--ln);padding:8px 14px}summary{cursor:pointer;font-weight:600;padding:4px 0}
+.r{display:grid;grid-template-columns:1fr auto;gap:0 8px;margin:7px 0}.r label{color:var(--mut)}.r output{font-variant-numeric:tabular-nums}.r input{grid-column:1/-1;width:100%;accent-color:var(--ac)}
+.row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.row>*{flex:1 1 auto}
+small,#msg{color:var(--mut)}#msg{margin:0;min-height:1.4em}
+@media (max-width:820px){body{grid-template-columns:1fr}aside{max-height:none;position:static;border-left:0}.stage{width:calc(min(100%,70vh*var(--ar,1.5))*var(--z,1))}}
+</style></head><body>
+<header><h1>Cinegrano</h1>
+<button id="open" class="pri">Abrir fotos</button><button id="demo">Imagen de muestra</button>
+<select id="eng" aria-label="Motor de procesamiento" title="La CPU es el motor aprobado. La GPU (WebGL2) es experimental: si no está disponible o falla, se usa la CPU automáticamente."><option value="cpu">Motor: CPU (aprobado)</option><option value="gpu">Motor: GPU (experimental)</option></select><select id="ds" aria-label="Datos de película" title="Datos de película"><option value="kodak">Datos Kodak digitalizados</option><option value="legacy">Datos provisionales (anteriores)</option></select><select id="mode" aria-label="Ruta de procesamiento"><option value="generic">Looks genéricos</option><option value="film">Película 250D→2383 (aprox.)</option></select><select id="view" aria-label="Vista de efectos" disabled><option value="full">Resultado completo</option><option value="base">Sin efectos</option><option value="grain">Solo grano (×4)</option><option value="hal">Solo halación</option><option value="bloom">Solo bloom</option></select><select id="cmpm" aria-label="Comparar con"><option value="orig">Comparar con original</option><option value="gen">Comparar con ruta genérica</option><option value="leg">Comparar con datos anteriores</option></select><select id="zoom" aria-label="Zoom"><option value="1">Ajustar</option><option value="2">200 %</option><option value="4">400 %</option></select><select id="fmt" aria-label="Formato"><option value="jpg">JPEG</option><option value="png8">PNG 8 bits</option><option value="png16">PNG 16 bits</option><option value="tif16">TIFF 16 bits</option></select><label id="jqw" title="Calidad JPEG">Calidad <input id="jq" type="range" min="50" max="100" value="93" style="width:80px"> <output id="jqo">93</output></label><label title="Los píxeles exportados están codificados en sRGB"><input id="icc" type="checkbox" checked> ICC sRGB</label>
+<select id="sz" aria-label="Tamaño de exportación"><option value="0">Tamaño original</option><option value="4096">Máx. 4096 px</option><option value="2048">Máx. 2048 px</option></select>
+<button id="exp" disabled>Exportar actual</button><button id="bat" disabled>Exportar lote</button>
+<input id="file" type="file" accept="image/*" multiple hidden></header>
+<main>
+<div id="empty"><b>Abre una fotografía</b>Arrastra archivos aquí o pulsa «Abrir fotos». Todo se procesa en tu dispositivo; nada se sube.</div>
+<div class="stage" id="stage"><canvas id="A"></canvas><canvas id="B"></canvas><span class="tag" style="right:8px">Después</span><span class="tag" id="tb" style="left:8px">Antes</span></div>
+<div class="cmp" id="cmp"><span>Antes</span><input id="cx" type="range" min="0" max="100" value="50" aria-label="Comparar antes y después"><span>Después</span></div>
+<p id="msg" role="status"></p></main>
+<aside id="panel"></aside>
+<script>
+/*CORE*/
+const REA=(()=>{
+const ID=[1,0,0,0,1,0,0,0,1];
+const PROFILES={
+neutral:{n:'Neutral (sin perfil)',mix:ID,sat:1,con:0,toe:0,knee:1,sh:[0,0,0],hi:[0,0,0]},
+warm:{n:'Negativo cálido 400',mix:[1.06,-.03,-.03,.02,.98,0,-.05,0,1.05],sat:.95,con:.35,toe:.025,knee:.8,sh:[-.008,.008,.022],hi:[.03,.014,-.02]},
+slide:{n:'Diapositiva fría',mix:[.97,.03,0,0,1.02,-.02,0,.05,.95],sat:1.18,con:.55,toe:0,knee:.88,sh:[-.01,0,.02],hi:[-.01,.004,.016]},
+fade:{n:'Vintage desvanecido',mix:[1.03,-.02,-.01,0,1,0,-.02,.04,.98],sat:.78,con:.15,toe:.07,knee:.74,sh:[0,.02,.02],hi:[.04,.02,-.03]},
+bleach:{n:'Bleach bypass',mix:ID,sat:.5,con:.7,toe:.01,knee:.9,sh:[0,0,.01],hi:[0,0,0]},
+mono:{n:'B/N pancromático',mix:[.6,.4,0,.2,.7,.1,0,.3,.7],sat:0,con:.4,toe:.02,knee:.85,sh:[0,0,0],hi:[0,0,0]}};
+const DEF={ver:3,dataset:'kodak',fnd:1,mode:'generic',view:'full',profile:'neutral',exposure:0,contrast:0,response:.5,print:0,shadows:0,mids:0,highs:0,sat:0,temp:0,tint:0,grain:0,gsize:1,grough:.5,gchroma:.3,hal:0,hrad:.02,hth:.7,bloom:0,brad:.04,bth:.6,fexp:0,fng:1,fpg:1,fpe:0,fpr:0,fpgc:0,fpb:0,fanc:.16,fhl:.5,fxt:1,fsat:1,fgr:.8,fmm:24.9,fgs:1,fgc:.3,fha:0,fhrad:.02,fhth:.7,fhR:1,fhG:.25,fhB:.08,fba:0,fbrad:.04,fbth:.6,fbR:1,fbG:1,fbB:1};
+const RNG={exposure:[-3,3],contrast:[-1,1],response:[0,1],print:[0,1],shadows:[-1,1],mids:[-1,1],highs:[-1,1],sat:[-1,1],temp:[-1,1],tint:[-1,1],grain:[0,1],gsize:[.3,4],grough:[0,1],gchroma:[0,1],hal:[0,1.5],hrad:[.003,.08],hth:[0,.95],bloom:[0,1.5],brad:[.003,.12],bth:[0,.95],fnd:[0,1],fexp:[-3,3],fng:[.5,1.6],fpg:[.5,1.6],fpe:[-2,2],fpr:[-.3,.3],fpgc:[-.3,.3],fpb:[-.3,.3],fanc:[.06,.4],fhl:[0,1],fxt:[0,2],fsat:[0,2],fgr:[0,3],fmm:[5,80],fgs:[.3,4],fgc:[0,1],fha:[0,3],fhrad:[.003,.08],fhth:[0,.95],fhR:[0,1],fhG:[0,1],fhB:[0,1],fba:[0,3],fbrad:[.003,.12],fbth:[0,.95],fbR:[0,1],fbG:[0,1],fbB:[0,1]};
+function norm(p){const o={};const ENUM={profile:Object.keys(PROFILES),mode:['generic','film'],view:['full','base','grain','hal','bloom'],dataset:['legacy','kodak']},old=p&&typeof p==='object'&&p.ver!==3&&p.dataset===undefined;for(const k in DEF){let v=p&&p[k];if(k==='ver'){o[k]=3;continue}if(k==='dataset'&&old){o[k]='legacy';continue}if(ENUM[k]){o[k]=ENUM[k].includes(v)?v:DEF[k];continue}v=(v==null||v==='')?NaN:Number(v);if(!isFinite(v))v=DEF[k];o[k]=Math.min(RNG[k][1],Math.max(RNG[k][0],v))}return o}
+const S2L=new Float32Array(256);for(let i=0;i<256;i++){const c=i/255;S2L[i]=c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4)}
+/* [EXPERIMENTAL pow-lut] 10^-u por tabla con interpolación lineal (paso 1/4096); fuera de [-1,6) usa Math.pow */
+const PW_LO=-1,PW_HI=6,PW_ST=4096,PW=(()=>{const t=new Float64Array((PW_HI-PW_LO)*PW_ST+2);for(let i=0;i<t.length;i++)t[i]=Math.pow(10,-(PW_LO+i/PW_ST));return t})();
+const pw10=u=>{if(!(u>=PW_LO&&u<PW_HI))return Math.pow(10,-u);const f=(u-PW_LO)*PW_ST,k=f|0;return PW[k]+(PW[k+1]-PW[k])*(f-k)};
+const EN=16384,E=new Float32Array(EN+1);for(let i=0;i<=EN;i++){const c=i/EN;E[i]=c<=.0031308?c*12.92:1.055*Math.pow(c,1/2.4)-.055}
+const enc=x=>{x=x<0?0:x>1?1:x;const f=x*EN,i=f|0,j=i<EN?i+1:EN;return E[i]+(E[j]-E[i])*(f-i)};
+function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function passH(a,b,w,h,r){const d=2*r+1,w3=w*3;for(let y=0;y<h;y++){const o=y*w3;let s0=0,s1=0,s2=0;
+for(let i=-r;i<=r;i++){const x=i<0?0:i>w-1?w-1:i,k=o+x*3;s0+=a[k];s1+=a[k+1];s2+=a[k+2]}
+for(let i=0;i<w;i++){const k=o+i*3;b[k]=s0/d;b[k+1]=s1/d;b[k+2]=s2/d;const hi=o+(i+r+1<w?i+r+1:w-1)*3,lo=o+(i>r?i-r:0)*3;s0+=a[hi]-a[lo];s1+=a[hi+1]-a[lo+1];s2+=a[hi+2]-a[lo+2]}}}
+function passV(a,b,w,h,r,S){const d=2*r+1,w3=w*3;S.fill(0);for(let i=-r;i<=r;i++){const o=(i<0?0:i>h-1?h-1:i)*w3;for(let k=0;k<w3;k++)S[k]+=a[o+k]}
+for(let y=0;y<h;y++){const o=y*w3;for(let k=0;k<w3;k++)b[o+k]=S[k]/d;const hi=(y+r+1<h?y+r+1:h-1)*w3,lo=(y>r?y-r:0)*w3;for(let k=0;k<w3;k++)S[k]+=a[hi+k]-a[lo+k]}}
+function blur(B,w,h,r,T){r=Math.max(1,Math.round(r));T=T||new Float32Array(B.length);const S=new Float64Array(w*3);for(let n=0;n<3;n++){passH(B,T,w,h,r);passV(T,B,w,h,r,S)}return B}
+function process(src,w,h,params,seed,bits){
+const p=norm(params);if(p.mode==='film')return film(src,w,h,p,seed,bits);const pr=PROFILES[p.profile],n=w*h,md=Math.min(w,h),lin=new Float32Array(n*3);
+const gain=Math.pow(2,p.exposure),wr=1+.25*p.temp,wb=1-.25*p.temp,wg=1-.15*p.tint;
+for(let i=0;i<n;i++){const j=i*4,k=i*3;lin[k]=S2L[src[j]]*gain*wr;lin[k+1]=S2L[src[j+1]]*gain*wg;lin[k+2]=S2L[src[j+2]]*gain*wb}
+const glow=(amt,rad,th,tint)=>{if(amt<=0)return;const B=new Float32Array(n*3),d=Math.max(1e-3,1-th);
+for(let i=0;i<n;i++){const k=i*3,L=.2126*lin[k]+.7152*lin[k+1]+.0722*lin[k+2],m=L>th?(L-th)/d:0;if(m>0)for(let c=0;c<3;c++)B[k+c]=tint?m*tint[c]:lin[k+c]*m}
+blur(B,w,h,rad*md);for(let i=0;i<n*3;i++)lin[i]+=amt*B[i]};
+glow(p.bloom,p.brad,p.bth,null);glow(p.hal*2,p.hrad,p.hth,[1,.22,.05]);
+const k=p.response*2,a=Math.min(.9,pr.con*k),toe=pr.toe*k,knee=1-(1-pr.knee)*k,sat=Math.max(0,(1+p.sat)*(1+(pr.sat-1)*k)),q=p.print,cf=1+.8*p.contrast;
+const M=pr.mix.map((v,i)=>(i%4===0?1:0)*(1-k)+v*k);
+const sm=x=>x*x*(3-2*x),cl=x=>x<0?0:x>1?1:x;
+const cv=x=>{x=cl(x);x+=a*(sm(x)-x);x=toe+x*(1-toe);x=x<=knee?x:knee+(1-knee)*Math.tanh((x-knee)/(1-knee));return(x-.5)*cf+.5};
+let gs=null;if(p.grain>0){const R=rng(seed|0),cell=Math.max(1,p.gsize*md/700),gw=Math.ceil(w/cell)+2,gh=Math.ceil(h/cell)+2;
+const F=[0,1,2,3].map(()=>{const f=new Float32Array(gw*gh);for(let i=0;i<f.length;i++)f[i]=(R()+R()+R()-1.5)*2;return f});gs={R,cell,gw,F}}
+const smp=(f,x,y)=>{const fx=x/gs.cell,fy=y/gs.cell,ix=fx|0,iy=fy|0,tx=fx-ix,ty=fy-iy,i=iy*gs.gw+ix,g=gs.gw;return f[i]*(1-tx)*(1-ty)+f[i+1]*tx*(1-ty)+f[i+g]*(1-tx)*ty+f[i+g+1]*tx*ty};
+const B16=bits===16,out=B16?new Uint16Array(n*4):new Uint8ClampedArray(n*4),ga=p.grain*.18,rf=.5*p.grough;
+for(let i=0;i<n;i++){const j=i*4,kk=i*3;
+let r=enc(lin[kk]),g=enc(lin[kk+1]),b=enc(lin[kk+2]);
+let r2=M[0]*r+M[1]*g+M[2]*b,g2=M[3]*r+M[4]*g+M[5]*b,b2=M[6]*r+M[7]*g+M[8]*b;
+r=cv(r2);g=cv(g2);b=cv(b2);
+let l=cl(.2126*r+.7152*g+.0722*b);const ws=(1-l)*(1-l),hw=l*l,mw=4*l*(1-l),dd=.25*(p.shadows*ws+p.mids*mw+p.highs*hw);
+r+=k*(pr.sh[0]*ws+pr.hi[0]*hw)+dd;g+=k*(pr.sh[1]*ws+pr.hi[1]*hw)+dd;b+=k*(pr.sh[2]*ws+pr.hi[2]*hw)+dd;
+l=.2126*r+.7152*g+.0722*b;r=l+(r-l)*sat;g=l+(g-l)*sat;b=l+(b-l)*sat;
+if(q>0){const t=.6*q;r=cl(r);g=cl(g);b=cl(b);r+=t*(sm(r)-r);g+=t*(sm(g)-g);b+=t*(sm(b)-b);
+r=.012*q+r*(1-.04*q);g=.012*q+g*(1-.04*q);b=.012*q+b*(1-.04*q);
+r+=q*(.012*hw-.01*ws);b+=q*(.012*ws-.01*hw);l=.2126*r+.7152*g+.0722*b;const s2=1-.1*q;r=l+(r-l)*s2;g=l+(g-l)*s2;b=l+(b-l)*s2}
+if(gs){const x=i%w,y=(i/w)|0,w2=ga*(.3+.7*mw),m=smp(gs.F[0],x,y),fn=(gs.R()+gs.R()-1)*2.45*rf,ms=1-rf,ch=p.gchroma;
+r+=(ms*((1-ch)*m+ch*smp(gs.F[1],x,y))+fn)*w2;g+=(ms*((1-ch)*m+ch*smp(gs.F[2],x,y))+fn)*w2;b+=(ms*((1-ch)*m+ch*smp(gs.F[3],x,y))+fn)*w2}
+if(B16){out[j]=q16(r);out[j+1]=q16(g);out[j+2]=q16(b);out[j+3]=src[j+3]*257}else{out[j]=r*255;out[j+1]=g*255;out[j+2]=b*255;out[j+3]=src[j+3]}}
+return out}
+const CT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let i=0;i<8;i++)c=c&1?0xEDB88320^c>>>1:c>>>1;t[n]=c>>>0}return t})();
+function crc32(u){let c=-1;for(let i=0;i<u.length;i++)c=CT[(c^u[i])&255]^c>>>8;return(c^-1)>>>0}
+function zip(files){const te=new TextEncoder(),parts=[],cd=[];let off=0;
+for(const f of files){const nm=te.encode(f.name),crc=crc32(f.data),sz=f.data.length;
+const lh=new DataView(new ArrayBuffer(30));lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x800,true);lh.setUint32(14,crc,true);lh.setUint32(18,sz,true);lh.setUint32(22,sz,true);lh.setUint16(26,nm.length,true);
+parts.push(new Uint8Array(lh.buffer),nm,f.data);
+const ch=new DataView(new ArrayBuffer(46));ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x800,true);ch.setUint32(16,crc,true);ch.setUint32(20,sz,true);ch.setUint32(24,sz,true);ch.setUint16(28,nm.length,true);ch.setUint32(42,off,true);
+cd.push(new Uint8Array(ch.buffer),nm);off+=30+nm.length+sz}
+let cs=0;for(const c of cd)cs+=c.length;
+const e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cs,true);e.setUint32(16,off,true);
+return new Blob([...parts,...cd,new Uint8Array(e.buffer)],{type:'application/zip'})}
+
+/* ===== Ruta de película (Vision3 250D → 2383, APROXIMADA). Datos PROVISIONALES de diseño: no son mediciones de Kodak ===== */
+const lg=(dmin,dr,g,a,xc,x0,x1)=>{const k=4*g/dr,q=[];for(let i=0;i<=200;i++){const x=x0+(x1-x0)*i/200,u=x-a*Math.log(1+Math.exp(4*x))/4;q.push([+x.toFixed(4),dmin+dr/(1+Math.exp(-k*(u-xc)))])}return q};
+const xcFor=(dmin,dr,g,a,d0)=>{const k=4*g/dr,s=(d0-dmin)/dr;return -a*Math.log(2)/4-Math.log(s/(1-s))/k};
+const NEGC=lg(.2,2.6,.9,.05,.2,-3.5,3.5),PRTC=lg(.06,3.8,3.2,.08,xcFor(.06,3.8,3.2,.08,1),-2.5,2.5);
+let FD={schema:1,provisional:true,note:'PROVISIONAL: curvas logísticas y matrices de diseño. Sustituir por datos digitalizados de H-1-5207 y H-1-2383.',
+neg:{name:'Vision3 250D (aprox.)',pts:[NEGC,NEGC,NEGC]},prt:{name:'2383 (aprox.)',pts:[PRTC,PRTC,PRTC]},
+mixExp:[[.9,.08,.02],[.05,.9,.05],[.02,.1,.88]],dyeNeg:[[1,.04,.01],[.07,1,.03],[.02,.1,1]],dyePrt:[[1,.05,.01],[.08,1,.04],[.02,.12,1]],
+grain:{um:18,pts:[[.2,.002],[.8,.0032],[1.4,.0042],[2,.005],[2.6,.0056]]},
+prov:{'neg.pts':'ESTIMADO: logística de diseño; gamma 0,9 AJUSTADO A MANO para el brillo de pantalla. No digitalizada de H-1-5207.','prt.pts':'ESTIMADO salvo un dato PUBLICADO: densidad visual 1,0 del gris LAD en x=0 (H-1-5207/H-1-61). Equiparar el parche LAD con el gris 18 % es una ASUNCIÓN. Forma restante ajustada a mano.','mixExp,dyeNeg,dyePrt':'ESTIMADO: matrices de diseño con filas normalizadas; no derivadas de las curvas espectrales.','grain.um':'ESTIMADO (18 µm). La apertura de referencia de 48 µm es PUBLICADA.','grain.pts':'ESTIMADO: σD no leído de la gráfica de Kodak.'}};
+function setFilmData(j){const ok=a=>Array.isArray(a)&&a.length>=2&&a.every((q,i)=>Array.isArray(q)&&q.length===2&&q.every(Number.isFinite)&&(i===0||q[0]>a[i-1][0]));
+const m3=m=>Array.isArray(m)&&m.length===3&&m.every(r=>Array.isArray(r)&&r.length===3&&r.every(Number.isFinite)&&r[0]+r[1]+r[2]>0);
+if(!j||typeof j!=='object')throw new Error('JSON inválido');const n={...FD};
+for(const k of['neg','prt'])if(j[k]){if(!Array.isArray(j[k].pts)||j[k].pts.length!==3||!j[k].pts.every(ok))throw new Error(k+'.pts: se esperan 3 curvas [x,y] con x creciente');n[k]={...FD[k],...j[k]}}
+for(const k of['mixExp','dyeNeg','dyePrt'])if(j[k]){if(!m3(j[k]))throw new Error(k+': se espera matriz 3×3');n[k]=j[k]}
+if(j.grain){if(!ok(j.grain.pts)||!(j.grain.um>0))throw new Error('grain: pts [D,sigma] y um>0');n.grain=j.grain}
+n.provisional=j.provisional!==false;n.prov=j.prov||{importado:'Datos importados por el usuario; la aplicación no verifica su origen.'};FD=n;return FD}
+const FDK={"schema":2,"name":"Digitalizado: H-1-5207 (250D, Status M) + H-1-2383 (2383, Status A)","provisional":false,"neg":{"name":"Vision3 250D (digitalizada)","pts":[[[-2.1825,0.1811],[-2.1072,0.1849],[-2.032,0.1868],[-1.9567,0.1919],[-1.8814,0.1974],[-1.8062,0.2072],[-1.7309,0.2181],[-1.6557,0.2313],[-1.5804,0.2449],[-1.5051,0.26],[-1.4299,0.276],[-1.3546,0.2948],[-1.2794,0.3159],[-1.2041,0.3397],[-1.1289,0.3664],[-1.0536,0.3955],[-0.9783,0.4286],[-0.9031,0.4643],[-0.8278,0.4996],[-0.7526,0.5349],[-0.6773,0.5702],[-0.6021,0.6054],[-0.5268,0.6412],[-0.4515,0.677],[-0.3763,0.7122],[-0.301,0.7478],[-0.2258,0.784],[-0.1505,0.8196],[-0.0753,0.8557],[0.0,0.8915],[0.0753,0.9272],[0.1505,0.9625],[0.2258,0.998],[0.301,1.0341],[0.3763,1.0694],[0.4515,1.1052],[0.5268,1.1412],[0.6021,1.1772],[0.6773,1.2129],[0.7526,1.248],[0.8278,1.2841],[0.9031,1.3197],[0.9783,1.3548],[1.0536,1.3899],[1.1289,1.4238],[1.2041,1.457],[1.2794,1.4898],[1.3546,1.5211],[1.4299,1.5511],[1.5051,1.5817],[1.5804,1.6115],[1.6557,1.64],[1.7309,1.6675],[1.8062,1.6951],[1.8814,1.7197],[1.9567,1.7423],[2.032,1.7621],[2.1072,1.7869],[2.1825,1.8027],[2.2577,1.8142],[2.333,1.83]],[[-2.1825,0.5825],[-2.1072,0.5855],[-2.032,0.5878],[-1.9567,0.5927],[-1.8814,0.5986],[-1.8062,0.6092],[-1.7309,0.6217],[-1.6557,0.6353],[-1.5804,0.6511],[-1.5051,0.6676],[-1.4299,0.6856],[-1.3546,0.706],[-1.2794,0.731],[-1.2041,0.7577],[-1.1289,0.7879],[-1.0536,0.8227],[-0.9783,0.8625],[-0.9031,0.9038],[-0.8278,0.9448],[-0.7526,0.9857],[-0.6773,1.0262],[-0.6021,1.068],[-0.5268,1.1099],[-0.4515,1.1518],[-0.3763,1.1933],[-0.301,1.2348],[-0.2258,1.2764],[-0.1505,1.318],[-0.0753,1.3598],[0.0,1.4015],[0.0753,1.4437],[0.1505,1.4857],[0.2258,1.5284],[0.301,1.5699],[0.3763,1.6116],[0.4515,1.6535],[0.5268,1.695],[0.6021,1.7366],[0.6773,1.7782],[0.7526,1.82],[0.8278,1.8619],[0.9031,1.9046],[0.9783,1.9469],[1.0536,1.9891],[1.1289,2.0292],[1.2041,2.0682],[1.2794,2.107],[1.3546,2.1452],[1.4299,2.1821],[1.5051,2.219],[1.5804,2.2561],[1.6557,2.2916],[1.7309,2.3264],[1.8062,2.3597],[1.8814,2.3904],[1.9567,2.4197],[2.032,2.446],[2.1072,2.4753],[2.1825,2.4944],[2.2577,2.5136],[2.333,2.5344]],[[-2.1825,0.848],[-2.1072,0.8514],[-2.032,0.8519],[-1.9567,0.852],[-1.8814,0.857],[-1.8062,0.8679],[-1.7309,0.8798],[-1.6557,0.8922],[-1.5804,0.9062],[-1.5051,0.9212],[-1.4299,0.9376],[-1.3546,0.9572],[-1.2794,0.9786],[-1.2041,1.0049],[-1.1289,1.0353],[-1.0536,1.0709],[-0.9783,1.1099],[-0.9031,1.1514],[-0.8278,1.1946],[-0.7526,1.2368],[-0.6773,1.2785],[-0.6021,1.3198],[-0.5268,1.3598],[-0.4515,1.3992],[-0.3763,1.4396],[-0.301,1.48],[-0.2258,1.5209],[-0.1505,1.5613],[-0.0753,1.6016],[0.0,1.641],[0.0753,1.6811],[0.1505,1.7219],[0.2258,1.7629],[0.301,1.8029],[0.3763,1.8428],[0.4515,1.8829],[0.5268,1.9233],[0.6021,1.964],[0.6773,2.0048],[0.7526,2.0456],[0.8278,2.0862],[0.9031,2.1267],[0.9783,2.1675],[1.0536,2.2071],[1.1289,2.2471],[1.2041,2.285],[1.2794,2.3224],[1.3546,2.3589],[1.4299,2.3932],[1.5051,2.4295],[1.5804,2.4642],[1.6557,2.4982],[1.7309,2.531],[1.8062,2.5632],[1.8814,2.5932],[1.9567,2.6193],[2.032,2.6403],[2.1072,2.6646],[2.1825,2.6807],[2.2577,2.7],[2.333,2.7164]]]},"prt":{"name":"2383 (digitalizada)","pts":[[[-1.0,0.1009],[-0.96,0.1075],[-0.92,0.1094],[-0.88,0.1094],[-0.84,0.1094],[-0.8,0.1101],[-0.76,0.1169],[-0.72,0.1169],[-0.68,0.1169],[-0.64,0.1169],[-0.6,0.1169],[-0.56,0.1169],[-0.52,0.1169],[-0.48,0.1169],[-0.44,0.1169],[-0.4,0.1169],[-0.36,0.1169],[-0.32,0.1169],[-0.28,0.1169],[-0.24,0.1169],[-0.2,0.1169],[-0.16,0.1169],[-0.12,0.1169],[-0.08,0.1169],[-0.04,0.1169],[0.0,0.1169],[0.04,0.1169],[0.08,0.1169],[0.12,0.1169],[0.16,0.1169],[0.2,0.1169],[0.24,0.1169],[0.28,0.1169],[0.32,0.1169],[0.36,0.12],[0.4,0.1362],[0.44,0.1529],[0.48,0.1711],[0.52,0.1933],[0.56,0.2181],[0.6,0.2486],[0.64,0.28],[0.68,0.3189],[0.72,0.3608],[0.76,0.4115],[0.8,0.4714],[0.84,0.5467],[0.88,0.6305],[0.92,0.7254],[0.96,0.8381],[1.0,0.9763],[1.04,1.1226],[1.08,1.2794],[1.12,1.4432],[1.16,1.6263],[1.2,1.8011],[1.24,1.9636],[1.28,2.1677],[1.32,2.3565],[1.36,2.5354],[1.4,2.7106],[1.44,2.8747],[1.48,3.0335],[1.52,3.1707],[1.56,3.3014],[1.6,3.4187],[1.64,3.5182],[1.68,3.6045],[1.72,3.6832],[1.76,3.7514],[1.8,3.8087],[1.84,3.8569],[1.88,3.898],[1.92,3.9381],[1.96,3.9774],[2.0,4.0077],[2.04,4.0402],[2.08,4.0718],[2.12,4.0803],[2.16,4.0902],[2.2,4.0993],[2.24,4.1053],[2.28,4.1078],[2.32,4.1094],[2.36,4.1094],[2.4,4.114],[2.44,4.1145],[2.48,4.1174],[2.52,4.1186],[2.56,4.1194]],[[-1.0,0.1009],[-0.96,0.1075],[-0.92,0.1094],[-0.88,0.1094],[-0.84,0.1094],[-0.8,0.1101],[-0.76,0.1169],[-0.72,0.1169],[-0.68,0.1169],[-0.64,0.1169],[-0.6,0.1169],[-0.56,0.1169],[-0.52,0.1169],[-0.48,0.1169],[-0.44,0.1169],[-0.4,0.1169],[-0.36,0.1169],[-0.32,0.1169],[-0.28,0.1169],[-0.24,0.1169],[-0.2,0.1169],[-0.16,0.1169],[-0.12,0.1169],[-0.08,0.1169],[-0.04,0.1169],[0.0,0.1169],[0.04,0.1284],[0.08,0.145],[0.12,0.1652],[0.16,0.1856],[0.2,0.2128],[0.24,0.2449],[0.28,0.282],[0.32,0.325],[0.36,0.3754],[0.4,0.4297],[0.44,0.4902],[0.48,0.5608],[0.52,0.6402],[0.56,0.7276],[0.6,0.8238],[0.64,0.9278],[0.68,1.0453],[0.72,1.1729],[0.76,1.3068],[0.8,1.4471],[0.84,1.601],[0.88,1.7566],[0.92,1.9225],[0.96,2.0858],[1.0,2.259],[1.04,2.4272],[1.08,2.5891],[1.12,2.7402],[1.16,2.8913],[1.2,3.0266],[1.24,3.1574],[1.28,3.2745],[1.32,3.3839],[1.36,3.4786],[1.4,3.5719],[1.44,3.6489],[1.48,3.7208],[1.52,3.7818],[1.56,3.8369],[1.6,3.8826],[1.64,3.9229],[1.68,3.9581],[1.72,3.9817],[1.76,4.0076],[1.8,4.0338],[1.84,4.0526],[1.88,4.0841],[1.92,4.0917],[1.96,4.0952],[2.0,4.0952],[2.04,4.0952],[2.08,4.0952],[2.12,4.0952],[2.16,4.0952],[2.2,4.0993],[2.24,4.1053],[2.28,4.1078],[2.32,4.1094],[2.36,4.1094],[2.4,4.114],[2.44,4.1145],[2.48,4.1174],[2.52,4.1186],[2.56,4.1194]],[[-1.0,0.1009],[-0.96,0.1075],[-0.92,0.1094],[-0.88,0.1094],[-0.84,0.1094],[-0.8,0.1101],[-0.76,0.1169],[-0.72,0.1236],[-0.68,0.125],[-0.64,0.125],[-0.6,0.125],[-0.56,0.125],[-0.52,0.1315],[-0.48,0.1401],[-0.44,0.1435],[-0.4,0.1506],[-0.36,0.1594],[-0.32,0.1694],[-0.28,0.1803],[-0.24,0.1964],[-0.2,0.2161],[-0.16,0.2362],[-0.12,0.2597],[-0.08,0.2902],[-0.04,0.3198],[0.0,0.3594],[0.04,0.4021],[0.08,0.4494],[0.12,0.5044],[0.16,0.5641],[0.2,0.6314],[0.24,0.7065],[0.28,0.7905],[0.32,0.8844],[0.36,0.991],[0.4,1.1144],[0.44,1.2484],[0.48,1.3953],[0.52,1.5579],[0.56,1.7302],[0.6,1.9191],[0.64,2.1054],[0.68,2.2966],[0.72,2.4861],[0.76,2.6664],[0.8,2.839],[0.84,3.0043],[0.88,3.1635],[0.92,3.3016],[0.96,3.4211],[1.0,3.5268],[1.04,3.6093],[1.08,3.687],[1.12,3.7499],[1.16,3.8082],[1.2,3.8553],[1.24,3.8953],[1.28,3.9263],[1.32,3.9537],[1.36,3.9801],[1.4,4.0012],[1.44,4.0208],[1.48,4.0348],[1.52,4.0463],[1.56,4.0565],[1.6,4.0673],[1.64,4.0768],[1.68,4.0807],[1.72,4.0903],[1.76,4.0938],[1.8,4.0999],[1.84,4.1074],[1.88,4.1074],[1.92,4.1074],[1.96,4.1074],[2.0,4.1074],[2.04,4.1074],[2.08,4.1074],[2.12,4.1074],[2.16,4.1074],[2.2,4.1074],[2.24,4.1074],[2.28,4.1078],[2.32,4.1094],[2.36,4.1094],[2.4,4.114],[2.44,4.1145],[2.48,4.1174],[2.52,4.1186],[2.56,4.1194]]],"pivot":[1.09,1.06,1.03]},"mixExp":[[1,0,0],[0,1,0],[0,0,1]],"dyeNeg":[[1,0,0],[0,1,0],[0,0,1]],"dyePrt":[[1,0,0],[0,1,0],[0,0,1]],"grain":{"um":18,"aboveDmin":true,"ptsRGB":[[[0.003,0.00565],[0.144,0.01025],[0.242,0.00985],[0.346,0.00835],[0.446,0.00768],[0.551,0.00734],[0.649,0.00647],[0.75,0.00611],[0.848,0.00574],[0.953,0.00545],[1.049,0.00535],[1.15,0.00536],[1.25,0.00518],[1.351,0.00485],[1.453,0.00465],[1.554,0.00454],[1.654,0.00457],[1.733,0.00424]],[[0.017,0.00683],[0.145,0.01026],[0.253,0.00993],[0.354,0.00871],[0.456,0.00817],[0.55,0.00756],[0.645,0.00733],[0.746,0.00651],[0.846,0.00612],[0.942,0.00624],[1.044,0.00642],[1.152,0.00655],[1.246,0.00666],[1.348,0.00695],[1.446,0.00709],[1.55,0.00675],[1.652,0.00644],[1.746,0.00617],[1.848,0.00598],[1.956,0.00547],[2.044,0.00517]],[[0.035,0.01519],[0.168,0.01562],[0.248,0.01567],[0.346,0.01517],[0.447,0.01391],[0.555,0.01269],[0.657,0.0124],[0.753,0.01272],[0.853,0.01285],[0.984,0.01353],[1.049,0.01375],[1.146,0.01379],[1.244,0.01333],[1.346,0.01272],[1.447,0.01209],[1.545,0.01165],[1.65,0.01088],[1.753,0.01012],[1.853,0.00899],[1.937,0.00761]]]},"prov":{"neg.pts":"DIGITALIZADO de H-1-5207 p.3 (Status M, ECN-2): ±0,006 D, ±0,03 paradas; suavizado 5 col., remuestreo 0,25 paradas, monotonía forzada. ASUNCIÓN A1: 0 paradas = gris 18 %.","prt.pts":"DIGITALIZADO de H-1-2383 p.4 (Status A, ECP-2D): ±0,01 D, ±0,015 logE; B/G/R fundidas en pie y meseta.","prt.pivot":"PUBLICADO: densidades LAD Status A 1,09/1,06/1,03 (H-387). ASUNCIÓN A5: el gris 18 % se copia al LAD.","fnd":"AJUSTE DE NEUTRALIDAD (no publicado): fnd=1 aplica a los tres canales la forma de la curva del verde alrededor de su pivote; fnd=0 usa las curvas R,G,B digitalizadas tal cual, que dan dominantes medidas (ver docs). Un factor derivado de las pendientes rectas se probó y empeoró el blanco: descartado.","matrices":"Identidad: no hay datos que justifiquen diafonía (control fxt sin efecto en este conjunto).","grain.ptsRGB":"DIGITALIZADO de H-1-5207 p.3 (σD difusa vs densidad sobre Dmin): ±4 % (B), ±10 % (G,R fundidas). ASUNCIÓN A3 densidad difusa≈Status M sobre Dmin.","grain.um":"ESTIMADO (18 µm); apertura de referencia 48 µm PUBLICADA."}};
+const getFilmData=n=>JSON.parse(JSON.stringify(n==='kodak'?FDK:FD));
+function lut(pts,N=2048){const x0=pts[0][0],x1=pts[pts.length-1][0],t=new Float32Array(N);let j=0;for(let i=0;i<N;i++){const x=x0+(x1-x0)*i/(N-1);while(j<pts.length-2&&pts[j+1][0]<x)j++;const a=pts[j],b=pts[j+1],f=(x-a[0])/(b[0]-a[0]||1);t[i]=a[1]+(b[1]-a[1])*Math.min(1,Math.max(0,f))}return{x0,x1,t,N}}
+const lk=(L,x)=>{let f=(x-L.x0)/(L.x1-L.x0)*(L.N-1);if(!(f>0))f=0;else if(f>L.N-1)f=L.N-1;const i=f|0,j=i+1<L.N?i+1:i;return L.t[i]+(L.t[j]-L.t[i])*(f-i)};
+function invX(L,d){for(let i=1;i<L.N;i++)if(L.t[i]>=d){const a=L.t[i-1],b=L.t[i],fr=b>a?(d-a)/(b-a):0;return L.x0+(L.x1-L.x0)*(i-1+fr)/(L.N-1)}return L.x1}
+function grainLattice(FX,p,w,h,seed){const R=rng(seed|0),pitch=p.fmm*1000/w,cell=Math.max(1,FX.grain.um*p.fgs/pitch),gw=Math.ceil(w/cell)+2,gh=Math.ceil(h/cell)+2;
+const F=[0,1,2,3].map(()=>{const f=new Float32Array(gw*gh);for(let i=0;i<f.length;i++)f[i]=(R()+R()+R()-1.5)*2;return f});return{F,gw,gh,cell}}
+function filmSetup(p){const FX=p.dataset==='legacy'?FD:FDK;
+const NL=FX.neg.pts.map(q=>lut(q)),PL=FX.prt.pts.map((q,c)=>{const L=lut(q);if(FX.prt.pivot){const x=invX(L,FX.prt.pivot[c]);L.x0-=x;L.x1-=x}return L}),GLs=FX.grain.ptsRGB?FX.grain.ptsRGB.map(q=>lut(q)):[0,1,2].map(()=>lut(FX.grain.pts)),gdm=FX.grain.aboveDmin?NL.map(L=>L.t[0]):[0,0,0];
+const rn=m=>m.map(r=>{const s=r[0]+r[1]+r[2];return r.map(v=>v/s)}),lm=(M,t)=>rn(M).map((r,i)=>r.map((v,j)=>(i===j?1:0)*(1-t)+v*t));
+const Sx=rn(FX.mixExp),Mn=lm(FX.dyeNeg,p.fxt),Mp=lm(FX.dyePrt,p.fxt),mv=(M,v)=>[0,1,2].map(i=>M[i][0]*v[0]+M[i][1]*v[1]+M[i][2]*v[2]);
+const Dg=mv(Mn,NL.map(L=>lk(L,0))),Pg=mv(Mp,PL.map(L=>lk(L,0))),Dm=mv(Mp,PL.map(L=>L.t[0])),Dg0=NL.map(L=>lk(L,0)),Pg0=PL.map(L=>lk(L,0));
+const Ag=[0,1,2].map(c=>p.fanc/Math.pow(10,-(Pg[c]-Dm[c]))),PLt=[p.fpr,p.fpgc,p.fpb],kn=.7+.28*p.fhl,gk=p.fgr*48/FX.grain.um;
+return{FX,NL,PL,GLs,gdm,Sx,Mn,Mp,Dg,Pg,Dm,Dg0,Pg0,Ag,PLt,kn,gk}}
+function film(src,w,h,p,seed,bits){const {FX,NL,PL,GLs,gdm,Sx,Mn,Mp,Dg,Pg,Dm,Dg0,Pg0,Ag,PLt,kn,gk}=filmSetup(p),n=w*h,md=Math.min(w,h),V=p.view;
+/* --- constantes hoisted (mismos valores que en la versión anterior; solo se calculan una vez) --- */
+const om=1-kn,fnd=p.fnd,k1=1-fnd,fex=p.fexp*.30103,fng=p.fng,fpg=p.fpg,fpe=p.fpe*.30103,fsat=p.fsat,fgc=p.fgc,c1=1-fgc,mode=fnd===0?0:fnd===1?1:2;
+const isId=M=>{for(let i=0;i<3;i++)for(let j=0;j<3;j++){const v=M[i][j];if(i===j?Math.abs(v-1)>1e-12:v!==0)return false}return true};
+const ID3=isId(Sx)&&isId(Mn)&&isId(Mp);
+const [[s00,s01,s02],[s10,s11,s12],[s20,s21,s22]]=Sx,[[m00,m01,m02],[m10,m11,m12],[m20,m21,m22]]=Mn,[[q00,q01,q02],[q10,q11,q12],[q20,q21,q22]]=Mp;
+const negD=(c,x)=>mode===0?Dg0[c]+(lk(NL[c],x)-Dg0[c])*fng:mode===1?Dg0[c]+(lk(NL[1],x)-Dg0[1])*fng:Dg0[c]+(k1*(lk(NL[c],x)-Dg0[c])+fnd*(lk(NL[1],x)-Dg0[1]))*fng;
+const prtD=(c,x)=>mode===0?Pg0[c]+(lk(PL[c],x)-Pg0[c])*fpg:mode===1?Pg0[c]+(lk(PL[1],x)-Pg0[1])*fpg:Pg0[c]+(k1*(lk(PL[c],x)-Pg0[c])+fnd*(lk(PL[1],x)-Pg0[1]))*fpg;
+const knee=y=>y<=kn?y:kn+om*Math.tanh((y-kn)/om),res=new Float64Array(3);
+const sat=(o0,o1,o2)=>{const l=.2126*o0+.7152*o1+.0722*o2;res[0]=l+(o0-l)*fsat;res[1]=l+(o1-l)*fsat;res[2]=l+(o2-l)*fsat};
+/* camino general (matrices no triviales, p. ej. el conjunto provisional): mismo cálculo, sin arrays temporales */
+function pixG(r,g,b,n0,n1,n2,hn){const E0=s00*r+s01*g+s02*b,E1=s10*r+s11*g+s12*b,E2=s20*r+s21*g+s22*b;
+const dn0=negD(0,Math.log10(Math.max(1e-6,E0)/.18)+fex),dn1=negD(1,Math.log10(Math.max(1e-6,E1)/.18)+fex),dn2=negD(2,Math.log10(Math.max(1e-6,E2)/.18)+fex);
+let d0=m00*dn0+m01*dn1+m02*dn2,d1=m10*dn0+m11*dn1+m12*dn2,d2=m20*dn0+m21*dn1+m22*dn2;
+if(hn){d0+=n0*lk(GLs[0],d0-gdm[0])*gk;d1+=n1*lk(GLs[1],d1-gdm[1])*gk;d2+=n2*lk(GLs[2],d2-gdm[2])*gk}
+const p0=prtD(0,-(d0-Dg[0])+PLt[0]+fpe),p1=prtD(1,-(d1-Dg[1])+PLt[1]+fpe),p2=prtD(2,-(d2-Dg[2])+PLt[2]+fpe);
+const z0=q00*p0+q01*p1+q02*p2,z1=q10*p0+q11*p1+q12*p2,z2=q20*p0+q21*p1+q22*p2;
+sat(knee(pw10(z0-Dm[0])*Ag[0]),knee(pw10(z1-Dm[1])*Ag[1]),knee(pw10(z2-Dm[2])*Ag[2]))}
+/* camino con tablas por código de entrada (matrices identidad y sin energía añadida): EXACTO, solo hay 256 valores de entrada por canal */
+const ycE=(c,d)=>knee(Math.pow(10,-(prtD(c,-(d-Dg[c])+PLt[c]+fpe)-Dm[c]))*Ag[c]),ycID=(c,d)=>knee(pw10(prtD(c,-(d-Dg[c])+PLt[c]+fpe)-Dm[c])*Ag[c]);
+let DN=null,LK=null,YT=null;
+function pixL(R,G,B,n0,n1,n2,hn){let o0,o1,o2;
+if(hn){o0=ycID(0,DN[0][R]+n0*LK[0][R]*gk);o1=ycID(1,DN[1][G]+n1*LK[1][G]*gk);o2=ycID(2,DN[2][B]+n2*LK[2][B]*gk)}else{o0=YT[0][R];o1=YT[1][G];o2=YT[2][B]}
+sat(o0,o1,o2)}
+const wantFx=V==='full'||V==='grain',glH=(wantFx&&p.fha>0),glB=(wantFx&&p.fba>0),glowView=V==='hal'||V==='bloom';
+const needLin=glowView||glH||glB||!ID3;
+if(!needLin){DN=[0,1,2].map(()=>new Float64Array(256));LK=[0,1,2].map(()=>new Float64Array(256));YT=[0,1,2].map(()=>new Float64Array(256));
+for(let c=0;c<3;c++)for(let v=0;v<256;v++){const dd=negD(c,Math.log10(Math.max(1e-6,S2L[v])/.18)+fex);DN[c][v]=dd;LK[c][v]=lk(GLs[c],dd-gdm[c]);YT[c][v]=ycE(c,dd)}}
+let lin=null,G=null;
+if(needLin){lin=new Float32Array(n*3);for(let i=0;i<n;i++){const j=i*4,k=i*3;lin[k]=S2L[src[j]];lin[k+1]=S2L[src[j+1]];lin[k+2]=S2L[src[j+2]]}}
+/* halación y bloom: máscaras SIEMPRE sobre la imagen original (como antes); 3 búferes en total en lugar de 4 */
+const mask=(buf,th,t,keep)=>{buf.fill(0);const d=Math.max(1e-3,1-th);for(let i=0;i<n;i++){const k=i*3,L=.2126*lin[k]+.7152*lin[k+1]+.0722*lin[k+2],m=L>th?(L-th)/d:0;if(m>0)for(let c=0;c<3;c++)buf[k+c]=m*t[c]*(keep?lin[k+c]:1)}};
+const finish=(buf,tmp,rad,amt)=>{blur(buf,w,h,rad*md,tmp);for(let i=0;i<buf.length;i++)buf[i]*=amt};
+const addTo=buf=>{for(let i=0;i<buf.length;i++)lin[i]+=buf[i]};
+const tH=[p.fhR,p.fhG,p.fhB],tB=[p.fbR,p.fbG,p.fbB];
+if(glowView){G=new Float32Array(n*3);const T=new Float32Array(n*3);if(V==='hal'){if(p.fha>0){mask(G,p.fhth,tH,false);finish(G,T,p.fhrad,p.fha)}}else if(p.fba>0){mask(G,p.fbth,tB,true);finish(G,T,p.fbrad,p.fba)}}
+else if(glH&&glB){const A=new Float32Array(n*3),T=new Float32Array(n*3);mask(A,p.fbth,tB,true);finish(A,T,p.fbrad,p.fba);mask(T,p.fhth,tH,false);addTo(A);finish(T,A,p.fhrad,p.fha);addTo(T)}
+else if(glH||glB){const A=new Float32Array(n*3),T=new Float32Array(n*3);if(glH){mask(A,p.fhth,tH,false);finish(A,T,p.fhrad,p.fha)}else{mask(A,p.fbth,tB,true);finish(A,T,p.fbrad,p.fba)}addTo(A)}
+/* grano: mismo generador y mismo orden de números aleatorios; los pesos bilineales se calculan una vez por píxel */
+let F=null,gw=0,cell=1;if(p.fgr>0&&wantFx){const GL0=grainLattice(FX,p,w,h,seed);F=GL0.F;gw=GL0.gw;cell=GL0.cell}
+const hasF=F!==null,f0=hasF?F[0]:null,f1=hasF?F[1]:null,f2=hasF?F[2]:null,f3=hasF?F[3]:null;
+const B16=bits===16,out=B16?new Uint16Array(n*4):new Uint8ClampedArray(n*4),RD=rng((seed|0)+99);
+for(let y=0,i=0;y<h;y++){let ty=0,b1=1,iy=0;if(hasF){const fy=y/cell;iy=fy|0;ty=fy-iy;b1=1-ty}
+for(let x=0;x<w;x++,i++){const k=i*3,j=i*4;let a,b,c;
+if(glowView){a=enc(G[k]);b=enc(G[k+1]);c=enc(G[k+2])}else{
+let n0=0,n1=0,n2=0;if(hasF){const fx=x/cell,ix=fx|0,tx=fx-ix,a1=1-tx,ii=iy*gw+ix,ij=ii+gw;
+const m=f0[ii]*a1*b1+f0[ii+1]*tx*b1+f0[ij]*a1*ty+f0[ij+1]*tx*ty;
+n0=c1*m+fgc*(f1[ii]*a1*b1+f1[ii+1]*tx*b1+f1[ij]*a1*ty+f1[ij+1]*tx*ty);n1=c1*m+fgc*(f2[ii]*a1*b1+f2[ii+1]*tx*b1+f2[ij]*a1*ty+f2[ij+1]*tx*ty);n2=c1*m+fgc*(f3[ii]*a1*b1+f3[ii+1]*tx*b1+f3[ij]*a1*ty+f3[ij+1]*tx*ty)}
+if(needLin)pixG(lin[k],lin[k+1],lin[k+2],n0,n1,n2,hasF);else pixL(src[j],src[j+1],src[j+2],n0,n1,n2,hasF);
+a=enc(res[0]);b=enc(res[1]);c=enc(res[2]);
+if(V==='grain'){if(needLin)pixG(lin[k],lin[k+1],lin[k+2],0,0,0,false);else pixL(src[j],src[j+1],src[j+2],0,0,0,false);a=.5+(a-enc(res[0]))*4;b=.5+(b-enc(res[1]))*4;c=.5+(c-enc(res[2]))*4}}
+if(B16){out[j]=q16(a);out[j+1]=q16(b);out[j+2]=q16(c);out[j+3]=src[j+3]*257}else{const d=(RD()-RD())/255;out[j]=(a+d)*255;out[j+1]=(b+d)*255;out[j+2]=(c+d)*255;out[j+3]=src[j+3]}}}
+return out}
+
+/* ===== Exportación: ICC sRGB, PNG/TIFF 16 bits, JPEG con ICC, dithering ===== */
+const q16=v=>(v<0?0:v>1?1:v)*65535+.5;
+const cat=a=>{let n=0;for(const x of a)n+=x.length;const o=new Uint8Array(n);let p=0;for(const x of a){o.set(x,p);p+=x.length}return o};
+const u32=v=>[v>>>24,v>>>16&255,v>>>8&255,v&255],asc=t=>[...t].map(c=>c.charCodeAt(0));
+const adler=u=>{let a=1,b=0;for(let i=0;i<u.length;i++){a=(a+u[i])%65521;b=(b+a)%65521}return((b<<16)|a)>>>0};
+function zstore(u){const nb=Math.max(1,Math.ceil(u.length/65535)),o=new Uint8Array(2+u.length+nb*5+4);o[0]=0x78;o[1]=1;let p=2;for(let i=0;i<nb;i++){const s=i*65535,l=Math.min(65535,u.length-s);o[p++]=i===nb-1?1:0;o[p++]=l&255;o[p++]=l>>8;o[p++]=~l&255;o[p++]=(~l>>8)&255;o.set(u.subarray(s,s+l),p);p+=l}o.set(u32(adler(u)),p);return o}
+async function deflate(u){if(typeof CompressionStream==='undefined')return zstore(u);const cs=new CompressionStream('deflate'),w=cs.writable.getWriter();w.write(u);w.close();return new Uint8Array(await new Response(cs.readable).arrayBuffer())}
+function iccSRGB(){const s15=v=>Math.round(v*65536)>>>0,str=(o,p,t)=>o.set(asc(t),p),W=(o,p,v)=>o.set(u32(v>>>0),p);
+const xyz=(x,y,z)=>{const o=new Uint8Array(20);str(o,0,'XYZ ');W(o,8,s15(x));W(o,12,s15(y));W(o,16,s15(z));return o};
+const nm='Cinegrano sRGB (primarias y curva sRGB, IEC 61966-2-1)',n=nm.length+1,desc=new Uint8Array(12+n+78);str(desc,0,'desc');W(desc,8,n);str(desc,12,nm);
+const tx='Perfil generado por Cinegrano; sin copyright.',cprt=new Uint8Array(9+tx.length);str(cprt,0,'text');str(cprt,8,tx);
+const curv=()=>{const o=new Uint8Array(12+2048);str(o,0,'curv');W(o,8,1024);for(let i=0;i<1024;i++){const c=i/1023,v=Math.round((c<=.04045?c/12.92:Math.pow((c+.055)/1.055,2.4))*65535);o[12+2*i]=v>>8;o[13+2*i]=v&255}return o};
+const tags=[['desc',desc],['cprt',cprt],['wtpt',xyz(.9642,1,.8249)],['rXYZ',xyz(.4360747,.2225045,.0139322)],['gXYZ',xyz(.3850649,.7168786,.0971045)],['bXYZ',xyz(.1430804,.0606169,.7141733)],['rTRC',curv()],['gTRC',curv()],['bTRC',curv()]];
+let pos=132+12*tags.length;const offs=tags.map(t=>{const o=pos;pos+=t[1].length+3&~3;return o}),o=new Uint8Array(pos);
+W(o,0,pos);o[8]=2;o[9]=0x40;str(o,12,'mntr');str(o,16,'RGB ');str(o,20,'XYZ ');o[24]=7;o[25]=0xEA;o[27]=10;o[29]=25;str(o,36,'acsp');W(o,68,s15(.9642));W(o,72,s15(1));W(o,76,s15(.8249));
+W(o,128,tags.length);tags.forEach((t,i)=>{str(o,132+12*i,t[0]);W(o,136+12*i,offs[i]);W(o,140+12*i,t[1].length);o.set(t[1],offs[i])});return o}
+function chunk(type,d){const o=new Uint8Array(12+d.length);o.set(u32(d.length),0);o.set(asc(type),4);o.set(d,8);o.set(u32(crc32(o.subarray(4,8+d.length))),8+d.length);return o}
+const PSIG=[137,80,78,71,13,10,26,10];
+function iccpChunk(icc){const nm=asc('Cinegrano sRGB'),z=zstore(icc),d=new Uint8Array(nm.length+2+z.length);d.set(nm,0);d.set(z,nm.length+2);return chunk('iCCP',d)}
+function pngInsertICC(u,icc){const parts=[u.subarray(0,8)];let p=8;while(p<u.length){const len=((u[p]<<24)|(u[p+1]<<16)|(u[p+2]<<8)|u[p+3])>>>0,t=String.fromCharCode(u[p+4],u[p+5],u[p+6],u[p+7]),end=p+12+len;if(!['sRGB','iCCP','gAMA','cHRM'].includes(t))parts.push(u.subarray(p,end));if(t==='IHDR')parts.push(iccpChunk(icc));p=end}return cat(parts)}
+async function png16(u,w,h,icc){const bpp=6,rb=w*bpp,raw=new Uint8Array(h*(rb+1)),row=new Uint8Array(rb);
+for(let y=0;y<h;y++){let q=0;for(let x=0;x<w;x++){const i=(y*w+x)*4;for(let c=0;c<3;c++){const v=u[i+c];row[q++]=v>>8;row[q++]=v&255}}const o=y*(rb+1);raw[o]=1;for(let i=0;i<rb;i++)raw[o+1+i]=(row[i]-(i>=bpp?row[i-bpp]:0))&255}
+const ih=new Uint8Array(13);ih.set(u32(w),0);ih.set(u32(h),4);ih[8]=16;ih[9]=2;
+return cat([new Uint8Array(PSIG),chunk('IHDR',ih),...(icc?[iccpChunk(icc)]:[]),chunk('IDAT',await deflate(raw)),chunk('IEND',new Uint8Array(0))])}
+function tiff16(u,w,h,icc){const nt=icc?11:10,bo=8+2+nt*12+4,io=bo+8,il=icc?icc.length+3&~3:0,dof=io+il,dl=w*h*6,o=new Uint8Array(dof+dl),d=new DataView(o.buffer);
+o[0]=73;o[1]=73;d.setUint16(2,42,true);d.setUint32(4,8,true);d.setUint16(8,nt,true);let p=10;
+const E=(tag,ty,cnt,v)=>{d.setUint16(p,tag,true);d.setUint16(p+2,ty,true);d.setUint32(p+4,cnt,true);if(ty===3&&cnt===1)d.setUint16(p+8,v,true);else d.setUint32(p+8,v,true);p+=12};
+E(256,4,1,w);E(257,4,1,h);E(258,3,3,bo);E(259,3,1,1);E(262,3,1,2);E(273,4,1,dof);E(277,3,1,3);E(278,4,1,h);E(279,4,1,dl);E(284,3,1,1);if(icc)E(34675,7,icc.length,io);
+for(let i=0;i<3;i++)d.setUint16(bo+i*2,16,true);if(icc)o.set(icc,io);let q=dof;for(let i=0;i<w*h;i++){const s=i*4;d.setUint16(q,u[s],true);d.setUint16(q+2,u[s+1],true);d.setUint16(q+4,u[s+2],true);q+=6}return o}
+function jpegInsertICC(u,icc){const L=18+icc.length-2,hd=new Uint8Array(18);hd[0]=255;hd[1]=226;hd[2]=L>>8;hd[3]=L&255;hd.set(asc('ICC_PROFILE'),4);hd[16]=1;hd[17]=1;
+const parts=[u.subarray(0,2)];let p=2,done=false;const ins=()=>{if(!done){parts.push(hd,icc);done=true}};if(u[2]!==255||u[3]!==224)ins();
+while(p<u.length-3&&u[p]===255&&u[p+1]!==218){const m=u[p+1],end=p+2+((u[p+2]<<8)|u[p+3]),old=m===226&&String.fromCharCode(...u.subarray(p+4,p+15))==='ICC_PROFILE';if(!old)parts.push(u.subarray(p,end));if(m===224)ins();p=end}
+ins();parts.push(u.subarray(p));return cat(parts)}
+function to8(u,seed){const o=new Uint8ClampedArray(u.length),R=rng((seed|0)+7);for(let i=0;i<u.length;i+=4){const d=R()-R();o[i]=u[i]/257+d;o[i+1]=u[i+1]/257+d;o[i+2]=u[i+2]/257+d;o[i+3]=u[i+3]/257}return o}
+return{DEF,RNG,PROFILES,norm,process,blur,crc32,zip,setFilmData,getFilmData,filmSetup,grainLattice,srgb:{dec:S2L,enc},iccSRGB,png16,tiff16,pngInsertICC,jpegInsertICC,to8,zstore}})();
+/*ENDCORE*/
+/*GLCORE*/
+/* Motor WebGL2 de CineGrano (prueba de concepto → integración progresiva). Global: GLCore.
+   Tono, grano, halación y bloom en GPU con las MISMAS tablas y algoritmos que el núcleo CPU. El núcleo CPU sigue siendo la referencia y la alternativa. */
+const GLCore=(()=>{
+const VS=`#version 300 es
+void main(){vec2 p=vec2(float(gl_VertexID&1)*2.-1.,float(gl_VertexID>>1)*2.-1.);gl_Position=vec4(p,0.,1.);}`;
+const HDR=`#version 300 es
+precision highp float;precision highp int;precision highp sampler2D;precision highp usampler2D;
+`;
+const TONE=HDR+`
+uniform usampler2D uSrc;uniform sampler2D uLut,uS2L,uF0,uF1,uF2,uF3,uGH,uGB;
+uniform vec2 uRng[9];uniform int uN,uMode,uGrain,uTileY,uView,uHasH,uHasB,uW;uniform uint uDith;
+uniform mat3 uSx,uMn,uMp;uniform vec3 uDg0,uDg,uPg0,uDm,uAg,uPLt,uGdm;
+uniform float uFex,uFng,uFpg,uFpe,uFsat,uFnd,uK1,uKn,uOm,uGk,uFgc,uC1,uCell,uAmtH,uAmtB;
+#ifdef OUT8
+out vec4 o8;
+#else
+out uvec4 o;
+#endif
+float lk(int row,float x){vec2 r=uRng[row];float f=(x-r.x)/(r.y-r.x)*float(uN-1);if(!(f>0.))f=0.;else if(f>float(uN-1))f=float(uN-1);int i=int(f);int j=(i+1<uN)?i+1:i;
+ float a=texelFetch(uLut,ivec2(i,row),0).r;return a+(texelFetch(uLut,ivec2(j,row),0).r-a)*(f-float(i));}
+float negD(int c,float x){float g0=uDg0[c];if(uMode==0)return g0+(lk(c,x)-g0)*uFng;if(uMode==1)return g0+(lk(1,x)-uDg0[1])*uFng;return g0+(uK1*(lk(c,x)-g0)+uFnd*(lk(1,x)-uDg0[1]))*uFng;}
+float prtD(int c,float x){float g0=uPg0[c];if(uMode==0)return g0+(lk(3+c,x)-g0)*uFpg;if(uMode==1)return g0+(lk(4,x)-uPg0[1])*uFpg;return g0+(uK1*(lk(3+c,x)-g0)+uFnd*(lk(4,x)-uPg0[1]))*uFpg;}
+float smp4(sampler2D f,ivec2 q,float tx,float ty,float a1,float b1){return texelFetch(f,q,0).r*a1*b1+texelFetch(f,q+ivec2(1,0),0).r*tx*b1+texelFetch(f,q+ivec2(0,1),0).r*a1*ty+texelFetch(f,q+ivec2(1,1),0).r*tx*ty;}
+float th(float x){return x>15.?1.:(x<-15.?-1.:tanh(x));}
+float oetf(float x){x=clamp(x,0.,1.);return x<=.0031308?x*12.92:1.055*pow(x,1./2.4)-.055;}
+vec3 chain(vec3 lin,vec3 nz,bool g){vec3 E=uSx*lin,dn;for(int c=0;c<3;c++){dn[c]=negD(c,log2(max(1e-6,E[c])/.18)*0.30102999566398120+uFex);}
+ vec3 d=uMn*dn;if(g){for(int c=0;c<3;c++)d[c]+=nz[c]*lk(6+c,d[c]-uGdm[c])*uGk;}
+ vec3 pp;for(int c=0;c<3;c++)pp[c]=prtD(c,-(d[c]-uDg[c])+uPLt[c]+uFpe);
+ vec3 z=uMp*pp,yv;for(int c=0;c<3;c++){float v=exp2(-(z[c]-uDm[c])*3.3219280948873623)*uAg[c];yv[c]=v<=uKn?v:uKn+uOm*th((v-uKn)/uOm);}
+ float l=.2126*yv.r+.7152*yv.g+.0722*yv.b;vec3 ys=vec3(l)+(yv-vec3(l))*uFsat;return vec3(oetf(ys.r),oetf(ys.g),oetf(ys.b));}
+float rnd(uint k){uint s=uDith+(k+1u)*0x6D2B79F5u;uint t=(s^(s>>15))*(1u|s);t=(t+((t^(t>>7))*(61u|t)))^t;return float(t^(t>>14))/4294967296.;}
+void main(){ivec2 p=ivec2(gl_FragCoord.xy);int x=p.x,y=p.y+uTileY;ivec2 q0=ivec2(x,y);uvec4 s=texelFetch(uSrc,q0,0);vec3 e;
+ if(uView==1){e=vec3(oetf(uAmtH*texelFetch(uGH,q0,0).r),oetf(uAmtH*texelFetch(uGH,q0,0).g),oetf(uAmtH*texelFetch(uGH,q0,0).b));}
+ else if(uView==2){e=vec3(oetf(uAmtB*texelFetch(uGB,q0,0).r),oetf(uAmtB*texelFetch(uGB,q0,0).g),oetf(uAmtB*texelFetch(uGB,q0,0).b));}
+ else{vec3 lin=vec3(texelFetch(uS2L,ivec2(int(s.r),0),0).r,texelFetch(uS2L,ivec2(int(s.g),0),0).r,texelFetch(uS2L,ivec2(int(s.b),0),0).r);
+  if(uHasB==1)lin=lin+uAmtB*texelFetch(uGB,q0,0).rgb;if(uHasH==1)lin=lin+uAmtH*texelFetch(uGH,q0,0).rgb;
+  vec3 nz=vec3(0.);if(uGrain==1){float fx=float(x)/uCell,fy=float(y)/uCell;int ix=int(fx),iy=int(fy);float tx=fx-float(ix),ty=fy-float(iy),a1=1.-tx,b1=1.-ty;ivec2 q=ivec2(ix,iy);
+   float m=smp4(uF0,q,tx,ty,a1,b1);nz=vec3(uC1*m+uFgc*smp4(uF1,q,tx,ty,a1,b1),uC1*m+uFgc*smp4(uF2,q,tx,ty,a1,b1),uC1*m+uFgc*smp4(uF3,q,tx,ty,a1,b1));}
+  if(uView==3){e=vec3(.5)+(chain(lin,nz,true)-chain(lin,nz,false))*4.;}else e=chain(lin,nz,uGrain==1);}
+ e=clamp(e,0.,1.);
+#ifdef OUT8
+ uint k=uint(y*uW+x);float d=rnd(2u*k)-rnd(2u*k+1u);vec3 v=floor(e*65535.+.5)/257.+d;o8=vec4(floor(v+.5)/255.,float(s.a)/255.);   // mismo dithering TPDF que REA.to8 (generador con salto directo)
+#else
+ o=uvec4(uvec3(e*65535.+.5),s.a*257u);
+#endif
+}`;
+const MASK=HDR+`uniform usampler2D uSrc;uniform sampler2D uS2L;uniform float uTh,uD;uniform vec3 uT;uniform int uKeep;out vec4 o;
+void main(){ivec2 p=ivec2(gl_FragCoord.xy);uvec4 s=texelFetch(uSrc,p,0);vec3 lin=vec3(texelFetch(uS2L,ivec2(int(s.r),0),0).r,texelFetch(uS2L,ivec2(int(s.g),0),0).r,texelFetch(uS2L,ivec2(int(s.b),0),0).r);
+ float L=.2126*lin.r+.7152*lin.g+.0722*lin.b;float m=L>uTh?(L-uTh)/uD:0.;vec3 v=vec3(0.);if(m>0.)v=m*uT*(uKeep==1?lin:vec3(1.));o=vec4(v,0.);}`;
+const BLUR=HDR+`uniform sampler2D uIn,uS;uniform ivec2 uDir,uDim;uniform int uR,uB,uUse;out vec4 o;
+ivec2 at(int pos,ivec2 p){return uDir.x==1?ivec2(pos,p.y):ivec2(p.x,pos);}
+vec3 px(int pos,ivec2 p){return texelFetch(uIn,at(pos,p),0).rgb;}
+void main(){ivec2 p=ivec2(gl_FragCoord.xy);int n=uDir.x==1?uDim.x:uDim.y,c=uDir.x==1?p.x:p.y;int lo=c-uR,hi=c+uR,a=max(lo,0),b=min(hi,n-1);vec3 s=vec3(0.);
+ if(lo<0)s+=float(-lo)*px(0,p);if(hi>n-1)s+=float(hi-(n-1))*px(n-1,p);
+ if(uUse==0||b-a+1<=2*uB){for(int i=a;i<=b;i++)s+=px(i,p);}
+ else{int ba=((a+uB-1)/uB)*uB;for(int i=a;i<ba;i++)s+=px(i,p);int jb=ba/uB,je=(b+1)/uB;for(int j=jb;j<je;j++)s+=texelFetch(uS,at(j,p),0).rgb;for(int i=je*uB;i<=b;i++)s+=px(i,p);}
+ o=vec4(s/float(2*uR+1),0.);}`;
+const BSUM=HDR+`uniform sampler2D uIn;uniform ivec2 uDir,uDim;uniform int uB;out vec4 o;
+void main(){ivec2 p=ivec2(gl_FragCoord.xy);int n=uDir.x==1?uDim.x:uDim.y,j=uDir.x==1?p.x:p.y;vec3 s=vec3(0.);for(int k=0;k<uB;k++){int i=j*uB+k;if(i<n){s+=texelFetch(uIn,uDir.x==1?ivec2(i,p.y):ivec2(p.x,i),0).rgb;}}o=vec4(s,0.);}`;
+const now=()=>performance.now();
+function makeCanvas(){return typeof OffscreenCanvas!=='undefined'?new OffscreenCanvas(1,1):document.createElement('canvas')}
+const CTX={antialias:false,alpha:false,depth:false,stencil:false,preserveDrawingBuffer:false};
+function detect(){try{const c=makeCanvas(),gl=c.getContext('webgl2',CTX);if(!gl)return{ok:false,reason:'WebGL2 no disponible'};
+ const d=gl.getExtension('WEBGL_debug_renderer_info'),ren=d?gl.getParameter(d.UNMASKED_RENDERER_WEBGL):gl.getParameter(gl.RENDERER),units=gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+ const info={ok:true,renderer:ren,maxTexture:gl.getParameter(gl.MAX_TEXTURE_SIZE),textureUnits:units,software:/swiftshader|llvmpipe|software|softpipe|microsoft basic/i.test(ren),floatRT:false};
+ if(units<16)return{ok:false,reason:'pocas unidades de textura ('+units+')',renderer:ren};
+ const fbOK=(ifmt,fmt,type)=>{try{const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,ifmt,4,4,0,fmt,type,null);const fb=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,fb);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,t,0);const ok=gl.checkFramebufferStatus(gl.FRAMEBUFFER)===gl.FRAMEBUFFER_COMPLETE&&gl.getError()===0;gl.deleteFramebuffer(fb);gl.deleteTexture(t);return ok}catch(e){return false}};
+ if(!fbOK(gl.RGBA16UI,gl.RGBA_INTEGER,gl.UNSIGNED_SHORT))return{ok:false,reason:'no se puede renderizar a enteros de 16 bits (RGBA16UI)',renderer:ren};
+ info.floatRT=!!gl.getExtension('EXT_color_buffer_float')&&fbOK(gl.RGBA32F,gl.RGBA,gl.FLOAT);info.render8=fbOK(gl.RGBA8,gl.RGBA,gl.UNSIGNED_BYTE);return info}catch(e){return{ok:false,reason:'error al crear el contexto: '+e.message}}}
+function wants(p){const full=p.view==='full';return{H:(full&&p.fha>0)||p.view==='hal',B:(full&&p.fba>0)||p.view==='bloom'}}
+function supports(p){if(p.mode!=='film')return{ok:false,reason:'la ruta genérica sigue en CPU'};return{ok:true}}
+function estimate(w,h,p,bits){const n=w*h,g=wants(p),bufs=(g.H&&g.B)?3:(g.H||g.B)?2:0,th=Math.max(1,Math.min(h,Math.floor(4194304/w)));
+ return{gpuMB:(n*4+w*th*(bits===8?4:8)+bufs*n*16+150000)/1048576,cpuMB:((bits===16?8:4)*n+((g.H||g.B||p.dataset==='legacy')?12*n:0)+((g.H&&g.B)?24*n:(g.H||g.B)?12*n:0))/1048576,buferesGlow:bufs}}
+function createProcessor(REA,opts={}){const cv=makeCanvas(),gl=cv.getContext('webgl2',CTX);if(!gl)throw new Error('WebGL2 no disponible');gl.getExtension('EXT_color_buffer_float');   /* las extensiones se activan por contexto: la de detect() no vale aquí */
+ let lost=false;cv.addEventListener&&cv.addEventListener('webglcontextlost',e=>{e.preventDefault();lost=true});
+ const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw new Error('shader: '+gl.getShaderInfoLog(o));return o};
+ const prog=(fs,def)=>{const p=gl.createProgram();gl.attachShader(p,sh(gl.VERTEX_SHADER,VS));gl.attachShader(p,sh(gl.FRAGMENT_SHADER,def?fs.replace('#version 300 es','#version 300 es\n'+def):fs));gl.linkProgram(p);if(!gl.getProgramParameter(p,gl.LINK_STATUS))throw new Error('enlace: '+gl.getProgramInfoLog(p));return{p,U:{}}};
+ const P={t16:prog(TONE),t8:prog(TONE,'#define OUT8'),mask:prog(MASK),blur:prog(BLUR),bsum:prog(BSUM)};
+ const use=q=>{gl.useProgram(q.p);return n=>q.U[n]||(q.U[n]=gl.getUniformLocation(q.p,n))};
+ const maxTex=gl.getParameter(gl.MAX_TEXTURE_SIZE),pool={};let lastSrc=null,lastKey='',lastLat=null;
+ const checkErr=(what)=>{const e=gl.getError();if(e!==0)throw new Error(what+' (error GL '+e+(e===gl.OUT_OF_MEMORY?': sin memoria de GPU':'')+')')};
+ const ent=(name,w,h,ifmt,fmt,type,data,keep)=>{gl.activeTexture(gl.TEXTURE0+15);const r=ent0(name,w,h,ifmt,fmt,type,data);gl.bindTexture(gl.TEXTURE_2D,null);return r},   /* unidad de trabajo aparte: evita enlazar por error la textura de destino en una unidad que lee el sombreador (bucle de retroalimentación) */
+ ent0=(name,w,h,ifmt,fmt,type,data)=>{let k=pool[name];if(k&&k.w===w&&k.h===h&&k.ifmt===ifmt){gl.bindTexture(gl.TEXTURE_2D,k.t);if(data){gl.texSubImage2D(gl.TEXTURE_2D,0,0,0,w,h,fmt,type,data)}return k}
+  if(k){gl.deleteTexture(k.t);if(k.fb)gl.deleteFramebuffer(k.fb)}const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D,0,ifmt,w,h,0,fmt,type,data||null);checkErr('textura '+name+' '+w+'×'+h);return pool[name]={t,w,h,ifmt,fb:null}};
+ const fbo=k=>{if(!k.fb){k.fb=gl.createFramebuffer();gl.bindFramebuffer(gl.FRAMEBUFFER,k.fb);gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,k.t,0);if(gl.checkFramebufferStatus(gl.FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)throw new Error('framebuffer incompleto')}gl.bindFramebuffer(gl.FRAMEBUFFER,k.fb)};
+ const bind=(unit,k)=>{gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,k.t)};
+ const cm=M=>new Float32Array([M[0][0],M[1][0],M[2][0],M[0][1],M[1][1],M[2][1],M[0][2],M[1][2],M[2][2]]);
+ const sync=()=>{gl.readPixels(0,0,1,1,gl.RGBA,gl.FLOAT,new Float32Array(4))};   // se llama solo con el destino float enlazado
+ function process(src,w,h,params,seed,o={}){const t0=now(),p=REA.norm(params),sp=supports(p);if(lost)throw new Error('contexto WebGL perdido');if(!sp.ok)throw new Error('no soportado en GL: '+sp.reason);
+  if(w>maxTex||h>maxTex)throw new Error('imagen mayor que MAX_TEXTURE_SIZE ('+maxTex+')');const g=wants(p),bits8=o.bits===8,GF=o.glowF16?{ifmt:gl.RGBA16F,type:gl.HALF_FLOAT,bpp:8}:{ifmt:gl.RGBA32F,type:gl.FLOAT,bpp:16};
+  if((g.H||g.B)&&!o.floatRT)throw new Error('sin render a coma flotante (EXT_color_buffer_float)');
+  const S=REA.filmSetup(p),N=S.NL[0].N,md=Math.min(w,h),ms={};let bytesUp=0;
+  const lutData=new Float32Array(N*9),rng=new Float32Array(18);[...S.NL,...S.PL,...S.GLs].forEach((L,i)=>{lutData.set(L.t,i*N);rng[i*2]=L.x0;rng[i*2+1]=L.x1});
+  const grain=(p.view==='full'||p.view==='grain')&&p.fgr>0,lk2=grain?[w,h,seed|0,p.fgs,p.fmm,S.FX.grain.um].join('|'):'',hitLat=grain&&lastLat&&lastLat.key===lk2,GL0=grain?(hitLat?lastLat.v:REA.grainLattice(S.FX,p,w,h,seed)):null,tU0=now();   /* la red aleatoria solo depende de (tamaño, semilla, tamaño de grano, formato): se reutiliza si no cambia */
+  if(grain&&!hitLat)lastLat={key:lk2,v:GL0};
+  gl.pixelStorei(gl.UNPACK_ALIGNMENT,1);
+  const key=w+'x'+h,same=o.reuseSource&&lastSrc===src&&lastKey===key;const kSrc=ent('src',w,h,gl.RGBA8UI,gl.RGBA_INTEGER,gl.UNSIGNED_BYTE,same?null:src);if(!same){bytesUp+=w*h*4;lastSrc=src;lastKey=key}
+  const kLut=ent('lut',N,9,gl.R32F,gl.RED,gl.FLOAT,lutData),kS2=ent('s2l',256,1,gl.R32F,gl.RED,gl.FLOAT,REA.srgb.dec);bytesUp+=lutData.byteLength+1024;
+  const kF=[0,1,2,3].map(k=>{if(grain){if(GL0.gw>maxTex||GL0.gh>maxTex)throw new Error('red de grano mayor que MAX_TEXTURE_SIZE');const ex=pool['f'+k];if(hitLat&&ex&&ex.w===GL0.gw&&ex.h===GL0.gh&&ex.key===lk2)return ex;if(ex&&(ex.w!==GL0.gw||ex.h!==GL0.gh)){gl.deleteTexture(ex.t);delete pool['f'+k]}bytesUp+=GL0.gw*GL0.gh*4;const e2=ent('f'+k,GL0.gw,GL0.gh,gl.R32F,gl.RED,gl.FLOAT,GL0.F[k]);e2.key=lk2;return e2}return ent('f'+k,1,1,gl.R32F,gl.RED,gl.FLOAT,new Float32Array(1))});
+  checkErr('subida de texturas');ms.preparacion_cpu=now()-tU0;
+  /* --- halación y bloom: máscara sobre la imagen ORIGINAL; búferes propios por efecto --- */
+  let GH=null,GB=null,bufsAlloc=0;const specs=[];if(g.H)specs.push({k:'H',th:p.fhth,t:[p.fhR,p.fhG,p.fhB],keep:0,rad:p.fhrad,amt:p.fha});if(g.B)specs.push({k:'B',th:p.fbth,t:[p.fbR,p.fbG,p.fbB],keep:1,rad:p.fbrad,amt:p.fba});
+  const tG0=now();
+  if(specs.length){const A=ent('gP',w,h,GF.ifmt,gl.RGBA,GF.type,null),Q=ent('gQ',w,h,GF.ifmt,gl.RGBA,GF.type,null),Rr=specs.length>1?ent('gR',w,h,GF.ifmt,gl.RGBA,GF.type,null):null;bufsAlloc=specs.length>1?3:2;
+   specs.forEach((sc,idx)=>{const X=idx===0?A:Q,Y=idx===0?Q:Rr||Q;
+    if(sc.amt>0){const r=Math.max(1,Math.round(sc.rad*md)),d=2*r+1,useB=(o.blur||'bloques')!=='directo'&&d>=48,B=useB?Math.min(48,Math.max(4,Math.round(Math.sqrt(d/2)))):1,rows=Math.max(8,Math.min(h,Math.floor(3e8/(w*(useB?3*Math.sqrt(d):d)))));
+     const bands=(vw,vh,rw)=>{for(let y0=0;y0<vh;y0+=rw){gl.viewport(0,y0,vw,Math.min(rw,vh-y0));gl.drawArrays(gl.TRIANGLE_STRIP,0,4)}};
+     let uu=use(P.mask);bind(0,kSrc);bind(2,kS2);gl.uniform1i(uu('uSrc'),0);gl.uniform1i(uu('uS2L'),2);gl.uniform1f(uu('uTh'),sc.th);gl.uniform1f(uu('uD'),Math.max(1e-3,1-sc.th));gl.uniform3fv(uu('uT'),sc.t);gl.uniform1i(uu('uKeep'),sc.keep);
+     fbo(X);bands(w,h,rows);
+     const pass=(from,to,dx,dy)=>{if(useB){const nb=Math.ceil((dx?w:h)/B),BS=ent(dx?'bsH':'bsV',dx?nb:w,dx?h:nb,gl.RGBA32F,gl.RGBA,gl.FLOAT,null),us=use(P.bsum);bind(0,from);gl.uniform1i(us('uIn'),0);gl.uniform2i(us('uDim'),w,h);gl.uniform2i(us('uDir'),dx,dy);gl.uniform1i(us('uB'),B);fbo(BS);bands(dx?nb:w,dx?h:nb,rows);bind(1,BS)}
+      const ub=use(P.blur);bind(0,from);gl.uniform1i(ub('uIn'),0);gl.uniform1i(ub('uS'),1);gl.uniform2i(ub('uDim'),w,h);gl.uniform1i(ub('uR'),r);gl.uniform1i(ub('uB'),B);gl.uniform1i(ub('uUse'),useB?1:0);gl.uniform2i(ub('uDir'),dx,dy);fbo(to);bands(w,h,rows)};
+     for(let it=0;it<3;it++){pass(X,Y,1,0);pass(Y,X,0,1)}}   // 3 × (horizontal + vertical): resultado final en X
+    if(sc.k==='H')GH=X;else GB=X})
+   if(specs.some(s=>s.amt>0)){const t=idxLast(specs);fbo(t);sync()}}
+  function idxLast(sp){return sp.length>1?pool.gQ:pool.gP}
+  ms.glow=now()-tG0;
+  /* --- paso de tono por bandas de ancho completo --- */
+  const T=use(bits8?P.t8:P.t16);[['uSrc',0],['uLut',1],['uS2L',2],['uF0',3],['uF1',4],['uF2',5],['uF3',6],['uGH',7],['uGB',8]].forEach(([n,i])=>gl.uniform1i(T(n),i));
+  bind(0,kSrc);bind(1,kLut);bind(2,kS2);kF.forEach((k,i)=>bind(3+i,k));
+  const dummy=ent('gd',1,1,gl.R32F,gl.RED,gl.FLOAT,new Float32Array(4).subarray(0,1));bind(7,GH||dummy);bind(8,GB||dummy);
+  checkErr('enlace de texturas');const fnd=p.fnd,mode=fnd===0?0:fnd===1?1:2,view=p.view==='hal'?1:p.view==='bloom'?2:p.view==='grain'?3:0;
+  gl.uniform2fv(T('uRng'),rng);gl.uniform1i(T('uN'),N);gl.uniform1i(T('uMode'),mode);gl.uniform1i(T('uGrain'),grain?1:0);gl.uniform1i(T('uView'),view);gl.uniform1i(T('uHasH'),(GH&&p.view==='full'&&p.fha>0)?1:0);gl.uniform1i(T('uHasB'),(GB&&p.view==='full'&&p.fba>0)?1:0);gl.uniform1i(T('uW'),w);gl.uniform1ui(T('uDith'),(((seed|0)+7)|0)>>>0);
+  gl.uniform1f(T('uAmtH'),p.fha);gl.uniform1f(T('uAmtB'),p.fba);
+  gl.uniformMatrix3fv(T('uSx'),false,cm(S.Sx));gl.uniformMatrix3fv(T('uMn'),false,cm(S.Mn));gl.uniformMatrix3fv(T('uMp'),false,cm(S.Mp));
+  gl.uniform3fv(T('uDg0'),S.Dg0);gl.uniform3fv(T('uDg'),S.Dg);gl.uniform3fv(T('uPg0'),S.Pg0);gl.uniform3fv(T('uDm'),S.Dm);gl.uniform3fv(T('uAg'),S.Ag);gl.uniform3fv(T('uPLt'),S.PLt);gl.uniform3fv(T('uGdm'),S.gdm);
+  gl.uniform1f(T('uFex'),p.fexp*.30103);gl.uniform1f(T('uFng'),p.fng);gl.uniform1f(T('uFpg'),p.fpg);gl.uniform1f(T('uFpe'),p.fpe*.30103);gl.uniform1f(T('uFsat'),p.fsat);gl.uniform1f(T('uFnd'),fnd);gl.uniform1f(T('uK1'),1-fnd);gl.uniform1f(T('uKn'),S.kn);gl.uniform1f(T('uOm'),1-S.kn);gl.uniform1f(T('uGk'),S.gk);gl.uniform1f(T('uFgc'),p.fgc);gl.uniform1f(T('uC1'),1-p.fgc);gl.uniform1f(T('uCell'),grain?GL0.cell:1);
+  checkErr('uniformes');const th=Math.max(1,Math.min(h,Math.floor(4194304/w))),bpp=bits8?4:8,ft=ent(bits8?'ft8':'ft16',w,th,bits8?gl.RGBA8:gl.RGBA16UI,bits8?gl.RGBA:gl.RGBA_INTEGER,bits8?gl.UNSIGNED_BYTE:gl.UNSIGNED_SHORT,null);fbo(ft);
+  checkErr('framebuffer de salida');const out=bits8?new Uint8ClampedArray(w*h*4):new Uint16Array(w*h*4),sy=bits8?new Uint8Array(4):new Uint16Array(4);let tR=0,tD=0;
+  for(let y0=0;y0<h;y0+=th){const hh=Math.min(th,h-y0);gl.viewport(0,0,w,hh);gl.uniform1i(T('uTileY'),y0);const a=now();gl.drawArrays(gl.TRIANGLE_STRIP,0,4);checkErr('dibujado del tono');gl.readPixels(0,0,1,1,bits8?gl.RGBA:gl.RGBA_INTEGER,bits8?gl.UNSIGNED_BYTE:gl.UNSIGNED_SHORT,sy);const b=now();
+   gl.readPixels(0,0,w,hh,bits8?gl.RGBA:gl.RGBA_INTEGER,bits8?gl.UNSIGNED_BYTE:gl.UNSIGNED_SHORT,out,y0*w*4);tR+=b-a;tD+=now()-b}
+  checkErr('procesamiento');ms.render_tono=tR;ms.lectura=tD;ms.total=now()-t0;
+  return{out,ms,bytes:{subida:bytesUp,lectura:w*h*bpp,gpu_residente_est:Math.round(w*h*4+w*th*bpp+bufsAlloc*w*h*GF.bpp+lutData.byteLength)},bandas:Math.ceil(h/th),buferes_glow:bufsAlloc}}
+ return{process,maxTexture:maxTex,isLost:()=>lost,release(){Object.values(pool).forEach(k=>{gl.deleteTexture(k.t);k.fb&&gl.deleteFramebuffer(k.fb)});for(const k in pool)delete pool[k];lastSrc=null;lastLat=null},lose(){const e=gl.getExtension('WEBGL_lose_context');if(e)e.loseContext()}}}
+/* Selección automática con alternativa CPU y error controlado. NUNCA modifica la imagen de entrada ni los parámetros. */
+function createAuto(REA,opts={}){const gpuBudget=opts.gpuBudgetMB??1536,cpuBudget=opts.cpuBudgetMB??3072,det=opts.forceCpu?{ok:false,reason:'forzado por el usuario'}:detect();let proc=null,why=det.ok?null:det.reason;
+ if(det.ok){try{proc=createProcessor(REA);const st=selfTest(REA,proc,det);if(!st.ok){proc=null;why='autoprueba fallida: '+st.reason}}catch(e){proc=null;why='no se pudo inicializar WebGL: '+e.message}}
+ const info={...det,usandoGL:!!proc,motivoCPU:proc?null:why,presupuestoGPU_MB:gpuBudget,presupuestoCPU_MB:cpuBudget};
+ function plan(w,h,p0,bits=16){const p=REA.norm(p0),est=estimate(w,h,p,bits),sp=supports(p);let eng='webgl',why2=null;
+  if(!proc)[eng,why2]=['cpu',why];else if(proc.isLost())[eng,why2]=['cpu','contexto WebGL perdido'];else if(!sp.ok)[eng,why2]=['cpu',sp.reason];
+  else if(w>proc.maxTexture||h>proc.maxTexture)[eng,why2]=['cpu',`dimensiones ${w}×${h} mayores que MAX_TEXTURE_SIZE (${proc.maxTexture})`];
+  else if(est.buferesGlow&&!det.floatRT)[eng,why2]=['cpu','el dispositivo no puede renderizar a coma flotante (necesario para halación y bloom)'];
+  else if(est.gpuMB>gpuBudget)[eng,why2]=['cpu',`memoria de GPU estimada ${est.gpuMB.toFixed(0)} MB > presupuesto ${gpuBudget} MB`];
+  if(bits===8&&eng==='webgl'&&!det.render8)[eng,why2]=['cpu','el dispositivo no puede renderizar a RGBA8'];
+  const cpuOK=est.cpuMB<=cpuBudget;return{engine:eng,motivo:why2,estimacion:est,cpuViable:cpuOK}}
+ function viaCpu(src,w,h,p,seed,bits,motivo,pl){if(!pl.cpuViable)return{out:null,engine:'error',error:`No se puede procesar esta imagen (${w}×${h}): ni la GPU ni la CPU disponen de memoria suficiente (CPU estimada ${pl.estimacion.cpuMB.toFixed(0)} MB > ${cpuBudget} MB). La imagen original y los parámetros no se han modificado. ${motivo?'Motivo GPU: '+motivo:''}`.trim()};
+  const t0=now();try{const o=bits===8?REA.process(src,w,h,p,seed):REA.process(src,w,h,p,seed,16);return{out:o,engine:'cpu',motivo,ms:now()-t0}}catch(e){return{out:null,engine:'error',error:`No se pudo procesar la imagen en la CPU (${e.message}). La imagen original y los parámetros no se han modificado.`}}}
+ return{info,plan,process(src,w,h,p,seed,o={}){const bits=o.bits===8?8:16,pl=plan(w,h,p,bits);
+  if(pl.engine==='webgl'){try{const r=proc.process(src,w,h,p,seed,{bits,reuseSource:!!o.reuseSource,floatRT:det.floatRT});return{out:r.out,engine:'webgl',detalle:r}}catch(e){return viaCpu(src,w,h,p,seed,bits,'error en GL ('+e.message+'); alternativa CPU',pl)}}
+  return viaCpu(src,w,h,p,seed,bits,pl.motivo,pl)},release(){proc&&proc.release()},_proc:proc}}
+function selfTest(REA,proc,det){const w=16,h=8,s=new Uint8ClampedArray(w*h*4);for(let i=0;i<w*h;i++)s.set([i*2,255-i*2,(i*7)&255,255],i*4);
+ const cases=[{mode:'film',dataset:'kodak',fgr:0},{mode:'film',dataset:'legacy',fgr:.5}];if(det.floatRT)cases.push({mode:'film',dataset:'kodak',fgr:0,fha:.5,fhth:.2,fhrad:.1});
+ for(const p of cases){const a=REA.process(s,w,h,p,1,16),b=proc.process(s,w,h,p,1,{floatRT:det.floatRT}).out;let m=0;for(let i=0;i<a.length;i++)m=Math.max(m,Math.abs(a[i]-b[i]));if(!(m<=24))return{ok:false,reason:'diferencia '+m+' códigos en la autoprueba'}}return{ok:true}}
+return{detect,supports,estimate,createProcessor,createAuto,selfTest}})();
+
+/*ENDGLCORE*/
+
+/* ---------- Interfaz ---------- */
+const $=s=>document.querySelector(s),{DEF,RNG,PROFILES}=REA;
+let P={...DEF},S=null,files=[],cur=0,raf=0,mem={};const ctl={};
+const LS={get(){try{return JSON.parse(localStorage.getItem('cg_presets')||'{}')}catch(e){return mem}},set(o){mem=o;try{localStorage.setItem('cg_presets',JSON.stringify(o))}catch(e){}}};
+const SEC=[['Perfil y respuesta',[['exposure','Exposición (EV)',.05],['contrast','Contraste',.01],['response','Film Response (intensidad del perfil)',.01]],true],
+['Film Print',[['print','Copia cinematográfica',.01]]],
+['Color',[['shadows','Sombras',.01],['mids','Medios tonos',.01],['highs','Altas luces',.01],['sat','Saturación',.01],['temp','Temperatura',.01],['tint','Matiz (verde/magenta)',.01]]],
+['Grano',[['grain','Intensidad',.01],['gsize','Tamaño',.05],['grough','Aspereza (distribución)',.01],['gchroma','Grano cromático',.01]]],
+['Halación',[['hal','Intensidad',.01],['hrad','Radio',.001],['hth','Umbral',.01]]],
+['Bloom',[['bloom','Intensidad',.01],['brad','Radio',.001],['bth','Umbral',.01]]]];
+function row(k,label,step){const d=document.createElement('div');d.className='r';d.innerHTML=`<label for="s_${k}">${label}</label><output></output><input id="s_${k}" type="range" min="${RNG[k][0]}" max="${RNG[k][1]}" step="${step}">`;
+const i=d.querySelector('input'),o=d.querySelector('output'),set=v=>{i.value=v;o.textContent=(+v).toFixed(step<.01?3:2)};
+i.oninput=()=>{P[k]=+i.value;set(i.value);sched()};i.ondblclick=()=>{P[k]=DEF[k];set(DEF[k]);sched()};ctl[k]=set;set(P[k]);return d}
+const panel=$('#panel');
+panel.insertAdjacentHTML('beforeend',`<details open><summary>Presets</summary><div class="row"><select id="pl" aria-label="Presets guardados"></select><button id="pload">Aplicar</button></div><div class="row"><input id="pname" type="text" placeholder="Nombre del preset"><button id="psave">Guardar</button></div><div class="row"><button id="pdel">Borrar</button><button id="pexp">Exportar JSON</button><button id="pimp">Importar JSON</button></div><input id="pfile" type="file" accept=".json,application/json" hidden></details>`);
+SEC.forEach(([t,rs,open],si)=>{const d=document.createElement('details');d.className='g';d.open=si<1||!!open;d.innerHTML=`<summary>${t}</summary>`;
+if(si===0){d.insertAdjacentHTML('beforeend',`<div class="r"><label for="prof">Perfil de película</label><select id="prof" style="grid-column:1/-1">${Object.entries(PROFILES).map(([k,v])=>`<option value="${k}">${v.n}</option>`).join('')}</select></div>`)}
+rs.forEach(r=>d.appendChild(row(...r)));panel.appendChild(d)});
+const FSEC=[['Negativo · Vision3 250D (aprox.)',[['fexp','Exposición (EV)',.05],['fng','Contraste del negativo',.01]]],
+['Copia · 2383 (aprox.)',[['fpe','Exposición de copia (EV)',.05],['fpg','Contraste de copia',.01],['fpr','Luz de impresora R (más luz = más cian)',.005],['fpgc','Luz de impresora G (más luz = más magenta)',.005],['fpb','Luz de impresora B (más luz = más amarillo)',.005],['fanc','Brillo de proyección',.005],['fhl','Inicio del rolloff de altas luces',.01]]],
+['Color',[['fnd','Neutralidad (1 = forma del canal verde; 0 = curvas R/G/B crudas)',.01],['fxt','Diafonía de tintes (solo datos provisionales)',.01],['fsat','Saturación de salida',.01]]],
+['Grano',[['fgr','Intensidad',.01],['fgs','Tamaño relativo',.05],['fgc','Grano cromático',.01]]],
+['Halación',[['fha','Intensidad',.01],['fhrad','Radio',.001],['fhth','Umbral',.01],['fhR','Color · rojo',.01],['fhG','Color · verde',.01],['fhB','Color · azul',.01]]],
+['Bloom',[['fba','Intensidad',.01],['fbrad','Radio',.001],['fbth','Umbral',.01],['fbR','Color · rojo',.01],['fbG','Color · verde',.01],['fbB','Color · azul',.01]]]];
+FSEC.forEach(([t,rs])=>{const d=document.createElement('details');d.className='f';d.open=true;d.innerHTML=`<summary>${t}</summary>`;
+if(t==='Grano')d.insertAdjacentHTML('beforeend','<div class="r"><label for="fmm">Formato de fotograma</label><select id="fmm" style="grid-column:1/-1"><option value="10.3">16 mm (10,3 mm)</option><option value="24.9">Super 35 (24,9 mm)</option><option value="36">Foto 35 mm (36 mm)</option><option value="52.5">65 mm (52,5 mm)</option></select></div>');
+rs.forEach(r=>d.appendChild(row(...r)));panel.appendChild(d)});
+panel.insertAdjacentHTML('beforeend','<details class="f" open><summary>Datos de película</summary><p><small><b>Datos Kodak digitalizados</b>: curvas de las hojas H-1-5207 (250D) y H-1-2383 a partir de gráficos raster (error ≈ ±0,006–0,01 D). Matrices de color y grano de copia <b>no modelados</b> por falta de datos. Los <b>provisionales</b> (anteriores) son estimaciones de diseño; el importador JSON sustituye estos últimos.</small></p><div class="row"><button id="fdi">Importar datos</button><button id="fde">Exportar datos actuales</button></div><input id="fdf" type="file" accept=".json,application/json" hidden></details>');
+$('#fmm').onchange=e=>{P.fmm=+e.target.value;sched()};
+$('#fdi').onclick=()=>$('#fdf').click();
+$('#fdf').onchange=async e=>{try{REA.setFilmData(JSON.parse(await e.target.files[0].text()));say('Datos de película sustituidos.');sched()}catch(x){say('No se importó: '+x.message)}e.target.value=''};
+$('#fde').onclick=()=>save(new Blob([JSON.stringify(REA.getFilmData(),null,1)],{type:'application/json'}),'cinegrano-datos-pelicula.json');
+panel.insertAdjacentHTML('beforeend',`<details open><summary>Ajustes</summary><div class="row"><button id="reset">Restablecer todo</button></div><small>Doble clic en un control para restablecerlo. Los perfiles son looks originales, no copias de ningún producto comercial.</small> <small id="ms"></small></details>`);
+$('#prof').onchange=e=>{P.profile=e.target.value;sched()};
+const sync=()=>{for(const k in ctl)ctl[k](P[k]);$('#prof').value=P.profile;$('#mode').value=P.mode;$('#ds').value=P.dataset;$('#view').value=P.view;$('#fmm').value=String(P.fmm);document.body.dataset.mode=P.mode;$('#view').disabled=P.mode!=='film'};
+$('#eng').onchange=e=>{if(e.target.value==='gpu'){if(!AUTO){try{AUTO=GLCore.createAuto(REA)}catch(x){AUTO=null}}if(!AUTO||!AUTO.info.usandoGL){say('GPU no disponible: '+(AUTO?AUTO.info.motivoCPU:'error al inicializar WebGL')+'. Se mantiene la CPU.');e.target.value='cpu';return}say('Motor GPU experimental activo ('+AUTO.info.renderer+(AUTO.info.software?' · renderizado por SOFTWARE, no es una GPU real':'')+'). La CPU sigue siendo el motor aprobado.')}else say('Motor CPU (aprobado).');sched()};$('#ds').onchange=e=>{P.dataset=e.target.value;sched()};$('#mode').onchange=e=>{P.mode=e.target.value;sync();sched()};$('#view').onchange=e=>{P.view=e.target.value;sched()};$('#cmpm').onchange=()=>sched();
+$('#zoom').onchange=e=>{const z=+e.target.value;$('#stage').style.setProperty('--z',z);$('#stage').classList.toggle('zz',z>1)};
+function lists(sel){const o=LS.get(),l=$('#pl');l.innerHTML=Object.keys(o).map(n=>`<option>${n.replace(/</g,'&lt;')}</option>`).join('')||'<option value="">(sin presets)</option>';if(sel)l.value=sel}
+const say=t=>$('#msg').textContent=t;
+$('#psave').onclick=()=>{const n=$('#pname').value.trim();if(!n)return say('Escribe un nombre para el preset.');const o=LS.get();o[n]=REA.norm(P);LS.set(o);lists(n);say(`Preset «${n}» guardado.`)};
+$('#pload').onclick=()=>{const o=LS.get(),n=$('#pl').value;if(!o[n])return say('No hay preset seleccionado.');P=REA.norm(o[n]);sync();sched();say(`Preset «${n}» aplicado.`)};
+$('#pdel').onclick=()=>{const o=LS.get(),n=$('#pl').value;if(!o[n])return;delete o[n];LS.set(o);lists();say(`Preset «${n}» borrado.`)};
+$('#pexp').onclick=()=>save(new Blob([JSON.stringify(LS.get(),null,1)],{type:'application/json'}),'cinegrano-presets.json');
+$('#pimp').onclick=()=>$('#pfile').click();
+$('#pfile').onchange=async e=>{try{const j=JSON.parse(await e.target.files[0].text()),o=LS.get();let c=0;for(const n in j){o[n]=REA.norm(j[n]);c++}LS.set(o);lists();say(`${c} presets importados.`)}catch(x){say('El archivo no es un JSON de presets válido.')}e.target.value=''};
+$('#reset').onclick=()=>{P={...DEF};sync();sched()};
+lists();sync();
+
+async function toPixels(f,max){const bm=await createImageBitmap(f),s=max?Math.min(1,max/Math.max(bm.width,bm.height)):1,w=Math.max(1,Math.round(bm.width*s)),h=Math.max(1,Math.round(bm.height*s)),c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d',{willReadFrequently:true});x.drawImage(bm,0,0,w,h);return{w,h,data:x.getImageData(0,0,w,h).data}}
+function show(s){S=s;$('#empty').style.display='none';const st=$('#stage');st.style.display='block';st.style.setProperty('--ar',s.w/s.h);$('#cmp').style.display='flex';
+for(const id of['A','B']){const c=$('#'+id);c.width=s.w;c.height=s.h}
+$('#B').getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(s.data),s.w,s.h),0,0);$('#exp').disabled=!files.length;$('#bat').disabled=!files.length;sched()}
+let AUTO=null;const engine=()=>$('#eng').value==='gpu'?AUTO:null;
+function process8(data,w,h,params,seed){const A=engine();return A?A.process(data,w,h,params,seed,{bits:8,reuseSource:true}):{out:REA.process(data,w,h,params,seed),engine:'cpu'}}   /* vista previa de 8 bits con el motor elegido; la GPU cae a CPU sola si no puede */
+let lastGen=false;function draw(){raf=0;if(!S)return;const t=performance.now(),cmv=$('#cmpm').value,gen=P.mode==='film'&&(cmv==='gen'||cmv==='leg'),r=process8(S.data,S.w,S.h,P,7);if(r.engine==='error'){say(r.error);return}$('#A').getContext('2d').putImageData(new ImageData(r.out,S.w,S.h),0,0);
+if(gen||lastGen){$('#B').getContext('2d').putImageData(new ImageData(gen?REA.process(S.data,S.w,S.h,cmv==='leg'?{...P,dataset:'legacy'}:{...P,mode:'generic'},7):new Uint8ClampedArray(S.data),S.w,S.h),0,0);lastGen=gen;$('#tb').textContent=gen?(cmv==='leg'?'Datos anteriores':'Genérico'):'Antes'}$('#ms').textContent=` Vista previa: ${Math.round(performance.now()-t)} ms · motor: ${r.engine}${$('#eng').value==='gpu'&&r.engine==='cpu'&&r.motivo?' (alternativa CPU: '+r.motivo+')':''}`}
+const sched=()=>{if(!raf)raf=requestAnimationFrame(draw)};
+async function load(list){const l=[...list].filter(f=>f.type.startsWith('image/'));if(!l.length)return say('Selecciona archivos de imagen (JPEG, PNG, WebP).');
+try{files=l;cur=0;say(`Cargando ${l.length} imagen(es)…`);show(await toPixels(l[0],1100));say(l.length>1?`${l.length} fotos cargadas; la vista previa usa la primera. «Exportar lote» aplica los ajustes a todas.`:l[0].name)}catch(e){say('No se pudo leer la imagen. Prueba con otro archivo.')}}
+$('#open').onclick=()=>$('#file').click();$('#file').onchange=e=>{load(e.target.files);e.target.value=''};
+addEventListener('dragover',e=>e.preventDefault());addEventListener('drop',e=>{e.preventDefault();load(e.dataTransfer.files)});
+$('#cx').oninput=e=>$('#stage').style.setProperty('--x',e.target.value+'%');
+$('#demo').onclick=()=>{const w=1100,h=733,c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d'),g=x.createLinearGradient(0,0,0,h*.6);g.addColorStop(0,'#2d4f7c');g.addColorStop(1,'#e9b98a');x.fillStyle=g;x.fillRect(0,0,w,h);x.fillStyle='#17191c';x.fillRect(0,h*.6,w,h*.4);
+x.fillStyle='#2a2f36';for(let i=0;i<9;i++){const bw=70+i*9%50,bh=120+(i*53)%140;x.fillRect(i*125+10,h*.6-bh,bw,bh)}
+x.fillStyle='#fff6dc';[[180,330],[470,300],[790,350],[950,310]].forEach(([a,b])=>{x.beginPath();x.arc(a,b,9,0,7);x.fill()});x.fillStyle='#c4453a';x.fillRect(300,520,160,70);x.fillStyle='#e8c26a';x.fillRect(620,540,120,50);
+files=[];show({w,h,data:x.getImageData(0,0,w,h).data});say('Imagen de muestra sintética: las luces puntuales sirven para ver Halación y Bloom.')};
+async function render(f,max){const s=await toPixels(f,max),fm=$('#fmt').value,icc=$('#icc').checked?REA.iccSRGB():null,seed=7,A=engine(),o=A?(()=>{const r=A.process(s.data,s.w,s.h,P,seed);if(r.engine==='error')throw new Error(r.error);return r.out})():REA.process(s.data,s.w,s.h,P,seed,16);
+if(fm==='png16')return{ext:'png',data:await REA.png16(o,s.w,s.h,icc)};if(fm==='tif16')return{ext:'tif',data:REA.tiff16(o,s.w,s.h,icc)};
+const c=document.createElement('canvas');c.width=s.w;c.height=s.h;c.getContext('2d').putImageData(new ImageData(REA.to8(o,seed),s.w,s.h),0,0);
+const b=await new Promise(r=>c.toBlob(r,fm==='jpg'?'image/jpeg':'image/png',+$('#jq').value/100));let u=new Uint8Array(await b.arrayBuffer());
+if(icc)u=fm==='jpg'?REA.jpegInsertICC(u,icc):REA.pngInsertICC(u,icc);return{ext:fm==='jpg'?'jpg':'png',data:u}}
+async function save(data,name){let d=null;try{d=window.claude?await window.claude.use('downloads'):null}catch(e){}
+if(d&&/\.tiff?$/i.test(name)){data=REA.zip([{name,data:new Uint8Array(await data.arrayBuffer())}]);name+='.zip'}
+if(d){try{await d.save({filename:name,data});say(`Guardado: ${name}`)}catch(e){say(e&&e.code==='declined'?'Descarga cancelada.':'No se pudo guardar el archivo.')}return}
+const a=document.createElement('a');a.href=URL.createObjectURL(data);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4e3)}
+const base=n=>n.replace(/\.[^.]+$/,'');
+$('#jq').oninput=e=>$('#jqo').textContent=e.target.value;$('#fmt').onchange=()=>$('#jqw').style.display=$('#fmt').value==='jpg'?'':'none';
+$('#exp').onclick=async()=>{if(!files.length)return;try{say('Procesando…');const f=files[cur],r=await render(f,+$('#sz').value||0);await save(new Blob([r.data]),`${base(f.name)}_cine.${r.ext}`)}catch(e){say(e&&e.message&&e.message.length<500?e.message:'No se pudo exportar. Prueba con un tamaño menor.')}};
+$('#bat').onclick=async()=>{if(!files.length)return;const out=[];try{for(let i=0;i<files.length;i++){say(`Procesando ${i+1} de ${files.length}…`);const r=await render(files[i],+$('#sz').value||0);let nm=`${base(files[i].name)}_cine.${r.ext}`;if(out.some(o=>o.name===nm))nm=`${base(files[i].name)}_${i+1}_cine.${r.ext}`;out.push({name:nm,data:r.data})}
+await save(REA.zip(out),'cinegrano-lote.zip')}catch(e){say((e&&e.message&&e.message.length<500?e.message+' ':'')+`Error en el lote tras ${out.length} fotos. Prueba con un tamaño menor.`)}};
+</script></body></html>
